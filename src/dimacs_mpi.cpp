@@ -15,7 +15,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 
-#include <mcb/mcb.hpp>
+#include <mcb/mcb_sva_trees_mpi.hpp>
 #include <mcb/util.hpp>
 
 using namespace boost;
@@ -24,16 +24,6 @@ namespace po = boost::program_options;
 #define USAGE "Computes the minimum cycle basis of a weighted undirected graph given in DIMACS format."
 
 int main(int argc, char *argv[]) {
-
-    boost::mpi::environment env(argc, argv, boost::mpi::threading::multiple);
-    boost::mpi::communicator world;
-
-    if (env.thread_level() < boost::mpi::threading::multiple) {
-        std::cerr << "Multiple thread level unsupported, bailing out.." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << boost::format("processor name: %s, number of tasks: %d, rank: %d\n") % env.processor_name() % world.size() % world.rank();
 
 
     po::variables_map vm;
@@ -44,10 +34,7 @@ int main(int argc, char *argv[]) {
         desc.add_options()
                 ("help,h", "Help")
                 ("verbose,v", po::value<bool>()->default_value(false)->implicit_value(true), "Verbose")
-                ("signed,s", po::value<bool>()->default_value(true), "Use one of either (a) signed graph or (b) shortest path trees")
-                ("parallel,p", po::value<bool>()->default_value(true), "Use parallelization")
                 ("printcycles", po::value<bool>()->default_value(false)->implicit_value(true), "Print cycles")
-                ("cores", po::value<int>()->default_value(0), "Number of cores")
                 ("input-file,I",po::value<std::string>(), "Input filename");
         // @formatter:on
         po::positional_options_description pos_desc;
@@ -73,6 +60,18 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // MPI
+    boost::mpi::environment env(argc, argv, boost::mpi::threading::multiple);
+    boost::mpi::communicator world;
+
+    if (env.thread_level() < boost::mpi::threading::multiple) {
+        std::cerr << "Multiple thread level unsupported, bailing out.." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << boost::format("processor name: %s, number of tasks: %d, rank: %d\n") % env.processor_name() % world.size() % world.rank();
+
+
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
     typedef graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
     typedef graph_traits<graph_t>::edge_descriptor edge_descriptor;
@@ -92,36 +91,11 @@ int main(int argc, char *argv[]) {
     std::cout << "Graph has " << num_edges(graph) << " edges" << std::endl;
     std::cout << std::flush;
 
-    std::size_t cores = 0;
-    if (vm.count("cores")) {
-        cores = vm["cores"].as<int>();
-    }
-    if (cores == 0) {
-        cores = boost::thread::hardware_concurrency();
-    }
-
     boost::timer::cpu_timer timer;
 
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
-    if (vm["signed"].as<bool>()) {
-        if (vm["parallel"].as<bool>()) {
-            std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
-                    cores);
-        } else {
-            std::cout << "Using MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-        }
-    } else {
-        if (vm["parallel"].as<bool>()) {
-            std::cout << "Using PAR_MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-        } else {
-            std::cout << "Using MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-        }
-    }
+    mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), world, std::back_inserter(cycles));
 
     timer.stop();
 

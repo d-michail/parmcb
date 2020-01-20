@@ -6,11 +6,14 @@
 #include <boost/config.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/program_options.hpp>
 #include <boost/timer/timer.hpp>
 #include <boost/thread.hpp>
+#include <boost/format.hpp>
+
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 
 #include <mcb/mcb.hpp>
 #include <mcb/util.hpp>
@@ -21,6 +24,17 @@ namespace po = boost::program_options;
 #define USAGE "Computes the minimum cycle basis of a weighted undirected graph given in DIMACS format."
 
 int main(int argc, char *argv[]) {
+
+    boost::mpi::environment env(argc, argv, boost::mpi::threading::multiple);
+    boost::mpi::communicator world;
+
+    if (env.thread_level() < boost::mpi::threading::multiple) {
+        std::cerr << "Multiple thread level unsupported, bailing out.." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << boost::format("processor name: %s, number of tasks: %d, rank: %d\n") % env.processor_name() % world.size() % world.rank();
+
 
     po::variables_map vm;
     try {
@@ -56,7 +70,7 @@ int main(int argc, char *argv[]) {
 
     } catch (const po::error &ex) {
         std::cerr << "Invalid arguments:" << ex.what() << std::endl;
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
@@ -65,6 +79,7 @@ int main(int argc, char *argv[]) {
 
     // create graph
     graph_t graph;
+
     FILE *fp = fopen(vm["input-file"].as<std::string>().c_str(), "r");
     if (fp == NULL) {
         std::cerr << "Failed to open input file." << std::endl;
@@ -92,7 +107,8 @@ int main(int argc, char *argv[]) {
     if (vm["signed"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), cores);
+            mcb_weight = mcb::mcb_sva_signed_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+                    cores);
         } else {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
             mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));

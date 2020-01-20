@@ -3,12 +3,17 @@
 
 #include <vector>
 #include <set>
+#include <map>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
 #include <mcb/forestindex.hpp>
+
+
+#define BUFFER_SIZE 1024
 
 namespace mcb {
 
@@ -87,6 +92,49 @@ namespace mcb {
         std::for_each(inIt.begin(), inIt.end(), [&outIt, &forest_index](auto i) {
             outIt = forest_index(i);
         });
+    }
+
+
+    template<class Graph>
+    void read_dimacs_from_file(FILE *fp, Graph& graph) {
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
+        typedef typename boost::graph_traits<Graph>::edge_descriptor edge_descriptor;
+
+        char buffer[BUFFER_SIZE], problem[BUFFER_SIZE];
+
+        std::size_t nnodes, nedges;
+        std::map<std::size_t, vertex_descriptor> vertex_map;
+
+        typename boost::property_map<Graph, boost::edge_weight_t>::type weight = get(boost::edge_weight, graph);
+
+        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+            buffer[strlen(buffer) - 1] = '\0'; // eat the newline
+            if (buffer[0] == 'c' || buffer[0] == '#') {
+                continue;
+            } else if (buffer[0] == 'p') {
+                sscanf(buffer, "p %s %lu %lu", problem, &nnodes, &nedges);
+                for (std::size_t i = 1; i <= nnodes; i++) {
+                    vertex_map[i] = boost::add_vertex(graph);
+                }
+            } else if (buffer[0] == 'a' || buffer[0] == 'e') {
+                int rs, rt;
+                double rw = 1;
+                char fc;
+                sscanf(buffer, "%c %d %d %lf", &fc, &rs, &rt, &rw);
+
+                if (vertex_map.find(rs) == vertex_map.end()) {
+                    throw std::system_error(EIO, std::generic_category());
+                }
+                if (vertex_map.find(rt) == vertex_map.end()) {
+                    throw std::system_error(EIO, std::generic_category());
+                }
+                vertex_descriptor sDescriptor = boost::vertex(vertex_map[rs], graph);
+                vertex_descriptor tDescriptor = boost::vertex(vertex_map[rt], graph);
+                edge_descriptor eDescriptor = boost::add_edge(sDescriptor, tDescriptor, graph).first;
+                weight[eDescriptor] = rw;
+            }
+        }
+
     }
 
 }

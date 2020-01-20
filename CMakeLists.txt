@@ -18,7 +18,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/etc/cmake/")
 
 ## ensure out-of-source build
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-    message(FATAL_ERROR "Requires an out-of-source build. Please create a separate build directory and run 'cmake path/to/mcb [options]' there.")
+    message(FATAL_ERROR "Requires an out-of-source build. Please create a separate build directory and run 'cmake path/to/parmcb [options]' there.")
 endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 
 ## additional user-defined library directories
@@ -26,15 +26,20 @@ foreach(library ${CMAKE_EXTRA_LIBRARIES})
     link_directories(${library})
 endforeach(library)
 
-#set(Boost_DEBUG ON)
+# Boost Libraries
+set(Boost_DEBUG OFF)
 set(Boost_USE_MULTITHREADED ON)
-find_package (Boost REQUIRED COMPONENTS timer program_options thread)
+find_package (Boost REQUIRED COMPONENTS timer program_options thread mpi)
 if(Boost_FOUND)
     message(STATUS "Will link against the following boost libraries: ${Boost_LIBRARIES}")
     message(STATUS "Boost includes: ${Boost_INCLUDE_DIRS}")
 endif()
 
+# Intel TBB
 find_package(TBB)
+
+# MPI
+find_package(MPI COMPONENTS CXX)
 
 #configure_file(include/mcb/config.h.in config.h @ONLY IMMEDIATE)
 
@@ -55,6 +60,17 @@ target_link_libraries(dimacs Boost::timer Boost::program_options Boost::thread)
 target_include_directories(dimacs PUBLIC ${TBB_INCLUDE_DIRS})
 target_compile_definitions(dimacs PUBLIC ${TBB_DEFINITIONS})
 target_link_libraries(dimacs ${TBB_LIBRARIES})
+
+add_executable(dimacs_mpi src/dimacs_mpi.cpp)
+target_include_directories(dimacs_mpi PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(dimacs_mpi PUBLIC ${Boost_INCLUDE_DIRS})
+target_link_libraries(dimacs_mpi Boost::timer Boost::program_options Boost::thread Boost::mpi)
+target_include_directories(dimacs_mpi PUBLIC ${TBB_INCLUDE_DIRS})
+target_compile_definitions(dimacs_mpi PUBLIC ${TBB_DEFINITIONS})
+target_link_libraries(dimacs_mpi ${TBB_LIBRARIES})
+target_include_directories(dimacs_mpi PUBLIC ${MPI_C_INCLUDE_PATH})
+target_link_libraries(dimacs_mpi MPI::MPI_CXX)
+
 
 enable_testing()
 include(CTest)

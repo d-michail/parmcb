@@ -41,6 +41,8 @@ find_package(TBB)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
+#add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+
 add_subdirectory(include/mcb)
 
 add_library(mcb INTERFACE)

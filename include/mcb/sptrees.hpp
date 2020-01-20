@@ -12,7 +12,6 @@
 #include <boost/graph/adjacency_list.hpp>
 
 #include <mcb/dijkstra.hpp>
-#include <mcb/fvs.hpp>
 #include <mcb/spvecgf2.hpp>
 #include <mcb/util.hpp>
 
@@ -273,9 +272,9 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        SPTrees(const Graph &g, const WeightMap &weight_map, bool sorted_cycles) :
+        SPTrees(const Graph &g, const WeightMap &weight_map, const std::vector<Vertex>& fvs, bool sorted_cycles) :
                 g(g), weight_map(weight_map), sorted_cycles(sorted_cycles) {
-            build_trees();
+            build_trees(fvs);
         }
 
         std::pair<std::set<Edge>, double> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
@@ -290,13 +289,11 @@ namespace mcb {
         std::vector<CandidateCycle<Graph, WeightMap>> cycles;
         bool sorted_cycles;
 
-        void build_trees() {
-            std::vector<Vertex> feedback_vertex_set;
-            mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
-            for (Vertex v : feedback_vertex_set) {
+        void build_trees(const std::vector<Vertex>& fvs) {
+            for (auto v : fvs) {
                 trees.emplace_back(g, weight_map, v);
             }
-            std::cout << "Feedback vertex set cardinality: " << feedback_vertex_set.size() << std::endl;
+            std::cout << "Feedback vertex set cardinality: " << fvs.size() << std::endl;
 
             for (auto &tree : trees) {
                 std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();

@@ -16,6 +16,7 @@
 
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
+#include <mcb/fvs.hpp>
 #include <mcb/sptrees.hpp>
 #include <mcb/util.hpp>
 
@@ -25,6 +26,7 @@ namespace mcb {
     typename boost::property_traits<WeightMap>::value_type _mcb_sva_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
 
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
@@ -54,8 +56,10 @@ namespace mcb {
          * Initialize all shortest path trees
          */
         trees_timer.resume();
+        std::vector<Vertex> feedback_vertex_set;
+        mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
         const bool sorted_cycles = true;
-        SPTrees<Graph, WeightMap, ParallelUsingTBB> sp_trees(g, weight_map, sorted_cycles);
+        SPTrees<Graph, WeightMap, ParallelUsingTBB> sp_trees(g, weight_map, feedback_vertex_set, sorted_cycles);
         trees_timer.stop();
 
         /*

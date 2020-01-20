@@ -26,7 +26,7 @@ namespace mcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_trees_mpi(const Graph &g, WeightMap weight_map,
-            boost::mpi::communicator& comm,
+            boost::mpi::communicator& world,
             CycleOutputIterator out) {
 
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
@@ -50,6 +50,21 @@ namespace mcb {
                 support.emplace_back(k);
             }
         }
+
+        /*
+         * Compute shortest path trees
+         */
+        std::vector<Vertex> feedback_vertex_set;
+        mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
+
+        // construct all candidate cycles
+        // figure out indices based on rank
+        // keep only the necessary trees and candidate cycles based on the rank
+
+
+        // run main loop only on rank==0
+        // use reduce to compute min cycle
+        // update orthogonal space on rank==0
 
         // TODO
 

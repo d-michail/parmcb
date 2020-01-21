@@ -10,7 +10,9 @@
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/serialization/vector.hpp>
 
+#include <mcb/forestindex.hpp>
 #include <mcb/dijkstra.hpp>
 #include <mcb/spvecgf2.hpp>
 #include <mcb/util.hpp>
@@ -28,7 +30,9 @@ namespace mcb {
     template<class Graph, class WeightMap> struct SPSubtree;
     template<class Graph, class WeightMap, bool ParallelUsingTBB> class SPTrees;
     template<class Graph, class WeightMap> class CandidateCycle;
-    template<class Graph> struct SerializableVertexTriplet;
+    template<class Graph> struct SerializableCandidateCycle;
+    template<class Graph, class WeightMap> struct SerializableMinOddCycle;
+    template<class Graph, class WeightMap> struct SerializableMinOddCycleMinOp;
 
     template<class Graph, class WeightMap>
     class SPNode {
@@ -176,7 +180,8 @@ namespace mcb {
             return create_candidate_cycles(itPair.first, itPair.second);
         }
 
-        std::vector<SerializableVertexTriplet<Graph>> create_candidate_vertex_triplets() {
+        std::vector<SerializableCandidateCycle<Graph>> create_serializable_candidate_cycles(
+                const ForestIndex<Graph> &forest_index) {
             // collect tree edges
             std::set<Edge> tree_edges;
             VertexIt vi, viend;
@@ -190,7 +195,7 @@ namespace mcb {
             }
 
             // loop over all non-tree edges and create candidate cycles
-            std::vector<SerializableVertexTriplet<Graph>> cycles;
+            std::vector<SerializableCandidateCycle<Graph>> cycles;
             for (const auto &e : boost::make_iterator_range(boost::edges(g))) {
                 if (tree_edges.find(e) != tree_edges.end()) {
                     continue;
@@ -205,7 +210,7 @@ namespace mcb {
                 if (u == nullptr) {
                     continue;
                 }
-                cycles.emplace_back(_source, boost::source(e, g), boost::target(e, g));
+                cycles.emplace_back(_source, forest_index(e));
             }
 
             return cycles;
@@ -306,24 +311,85 @@ namespace mcb {
     };
 
     template<class Graph>
-    struct SerializableVertexTriplet {
+    struct SerializableCandidateCycle {
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+        typedef typename ForestIndex<Graph>::size_type Edge;
 
-        SerializableVertexTriplet() {
+        SerializableCandidateCycle() {
         }
 
-        SerializableVertexTriplet(Vertex v, Vertex u, Vertex w) :
-                v(v), u(u), w(w) {
+        SerializableCandidateCycle(Vertex v, Edge e) :
+                v(v), e(e) {
         }
 
         template<typename Archive>
         void serialize(Archive &ar, const unsigned) {
             ar & v;
-            ar & u;
-            ar & w;
+            ar & e;
         }
 
-        Vertex v, u, w;
+        Vertex v;
+        Edge e;
+    };
+
+    template<class Graph, class WeightMap>
+    struct SerializableMinOddCycle {
+        typedef typename ForestIndex<Graph>::size_type Edge;
+        typedef typename boost::property_traits<WeightMap>::value_type WeightType;
+
+        SerializableMinOddCycle() :
+                exists(false) {
+        }
+
+        SerializableMinOddCycle(std::vector<Edge> edges, WeightType weight, bool exists) :
+                edges(edges), weight(weight), exists(exists) {
+        }
+
+        SerializableMinOddCycle(const SerializableMinOddCycle<Graph, WeightMap> &c) :
+                edges(c.edges), weight(c.weight), exists(c.exists) {
+        }
+
+        SerializableMinOddCycle<Graph, WeightMap>& operator=(const SerializableMinOddCycle<Graph, WeightMap> &other) {
+            if (this != &other) {
+                edges = other.edges;
+                weight = other.weight;
+                exists = other.exists;
+            }
+            return *this;
+        }
+
+        template<typename Archive>
+        void serialize(Archive &ar, const unsigned) {
+            ar & edges;
+            ar & weight;
+            ar & exists;
+        }
+
+        std::vector<Edge> edges;
+        WeightType weight;
+        bool exists;
+    };
+
+    template<class Graph, class WeightMap>
+    struct SerializableMinOddCycleMinOp {
+
+        const SerializableMinOddCycle<Graph, WeightMap>& operator()(
+                const SerializableMinOddCycle<Graph, WeightMap> &lhs,
+                const SerializableMinOddCycle<Graph, WeightMap> &rhs) const {
+            if (!lhs.exists || !rhs.exists) {
+                if (lhs.exists) {
+                    return lhs;
+                } else {
+                    return rhs;
+                }
+            }
+            // both valid, compare
+            if (lhs.weight < rhs.weight) {
+                return lhs;
+            }
+            return rhs;
+        }
+
     };
 
     template<class Graph, class WeightMap, bool ParallelUsingTBB>
@@ -344,7 +410,7 @@ namespace mcb {
             build_trees(fvs);
         }
 
-        std::pair<std::set<Edge>, double> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
+        std::tuple<std::set<Edge>, double, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
             return _compute_shortest_odd_cycle(edges);
         }
 
@@ -398,49 +464,38 @@ namespace mcb {
         }
 
         template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::pair<std::set<Edge>, double> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+        std::tuple<std::set<Edge>, double, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<!is_tbb_enabled>::type* = 0) {
 
             for (auto tree : trees) {
                 tree.update_parities(edges);
             }
 
-            std::set<Edge> min_cycle;
-            WeightType min_cycle_weight = 0.0;
-            bool min_cycle_set = false;
+            std::tuple<std::set<Edge>, WeightType, bool> min;
 
             for (CandidateCycle<Graph, WeightMap> c : cycles) {
                 std::tuple<std::set<Edge>, WeightType, bool> cc = check_and_construct_candidate_cycle(c, edges,
-                        min_cycle_set, min_cycle_weight);
+                        std::get<2>(min), std::get<1>(min));
 
                 if (std::get<2>(cc)) {
                     if (sorted_cycles) {
-                        // sorted, so we can directly return the minimum
-                        return std::make_pair(std::get<0>(cc), std::get<1>(cc));
+                        return cc;
                     }
 
-                    if (!min_cycle_set) {
-                        min_cycle = std::get<0>(cc);
-                        min_cycle_weight = std::get<1>(cc);
-                        min_cycle_set = true;
+                    if (!std::get<2>(min)) {
+                        min = cc;
                     } else {
-                        if (std::get<1>(cc) < min_cycle_weight) {
-                            min_cycle = std::get<0>(cc);
-                            min_cycle_weight = std::get<1>(cc);
+                        if (std::get<1>(cc) < std::get<1>(min)) {
+                            min = cc;
                         }
                     }
                 }
             }
-
-            if (!min_cycle_set) {
-                return std::make_pair(std::set<Edge> { }, 0.0);
-            } else {
-                return std::make_pair(min_cycle, min_cycle_weight);
-            }
+            return min;
         }
 
         template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::pair<std::set<Edge>, double> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+        std::tuple<std::set<Edge>, double, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<is_tbb_enabled>::type* = 0) {
 
             tbb::parallel_for(tbb::blocked_range<std::size_t>(0, trees.size()),
@@ -449,10 +504,6 @@ namespace mcb {
                             trees[i].update_parities(edges);
                         }
                     });
-
-            std::set<Edge> min_cycle;
-            double min_cycle_weight;
-            bool min_cycle_set = false;
 
             std::less<WeightType> compare = std::less<WeightType>();
             typedef std::tuple<std::set<Edge>, WeightType, bool> cycle_t;
@@ -471,8 +522,7 @@ namespace mcb {
                 return c2;
             };
 
-            std::tie(min_cycle, min_cycle_weight, min_cycle_set) = tbb::parallel_reduce(
-                    tbb::blocked_range<std::size_t>(0, cycles.size()),
+            return tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, cycles.size()),
                     std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
                     [&](tbb::blocked_range<std::size_t> r, auto running_min) {
                         for (std::size_t i = r.begin(); i < r.end(); i++) {
@@ -486,12 +536,6 @@ namespace mcb {
                         return running_min;
                     },
                     cycle_min);
-
-            if (!min_cycle_set) {
-                return std::make_pair(std::set<Edge> { }, 0.0);
-            } else {
-                return std::make_pair(min_cycle, min_cycle_weight);
-            }
         }
 
         std::tuple<std::set<Edge>, WeightType, bool> check_and_construct_candidate_cycle(

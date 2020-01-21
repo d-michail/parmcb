@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cassert>
 
+#include <boost/serialization/vector.hpp>
+
 namespace mcb {
 
     template<typename U>
@@ -164,8 +166,15 @@ namespace mcb {
         }
 
     private:
-        std::vector<U> ones;
+        friend class boost::serialization::access;
 
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version)
+        {
+          ar & ones;
+        }
+
+        std::vector<U> ones;
     };
 
     template<typename U>

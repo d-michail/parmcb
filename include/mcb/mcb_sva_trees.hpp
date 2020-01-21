@@ -76,11 +76,12 @@ namespace mcb {
              */
             std::set<Edge> best_cycle;
             WeightType best_cycle_weight;
+            bool best_cycle_set;
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
 
             cycle_timer.resume();
-            boost::tie(best_cycle, best_cycle_weight) = sp_trees.compute_shortest_odd_cycle(signed_edges);
+            std::tie(best_cycle, best_cycle_weight, best_cycle_set) = sp_trees.compute_shortest_odd_cycle(signed_edges);
             cycle_timer.stop();
 
             /*

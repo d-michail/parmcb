@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
     }
 
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
-    typedef graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
     typedef graph_traits<graph_t>::edge_descriptor edge_descriptor;
 
     // create graph
@@ -122,7 +121,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "weight= " << mcb_weight << std::endl;
+    std::cout << "weight = " << mcb_weight << std::endl;
 
     if (vm["verbose"].as<bool>()) {
         std::cout << "time:" << timer.format();

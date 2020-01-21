@@ -123,10 +123,10 @@ namespace mcb {
                 sscanf(buffer, "%c %d %d %lf", &fc, &rs, &rt, &rw);
 
                 if (vertex_map.find(rs) == vertex_map.end()) {
-                    throw std::system_error(EIO, std::generic_category());
+                    throw std::system_error(EIO, std::generic_category(), "Vertex not found");
                 }
                 if (vertex_map.find(rt) == vertex_map.end()) {
-                    throw std::system_error(EIO, std::generic_category());
+                    throw std::system_error(EIO, std::generic_category(), "Vertex not found");
                 }
                 vertex_descriptor sDescriptor = boost::vertex(vertex_map[rs], graph);
                 vertex_descriptor tDescriptor = boost::vertex(vertex_map[rt], graph);

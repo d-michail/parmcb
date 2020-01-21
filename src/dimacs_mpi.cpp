@@ -25,7 +25,6 @@ namespace po = boost::program_options;
 
 int main(int argc, char *argv[]) {
 
-
     po::variables_map vm;
     try {
         po::options_description desc(
@@ -73,12 +72,10 @@ int main(int argc, char *argv[]) {
 
 
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
-    typedef graph_traits<graph_t>::vertex_descriptor vertex_descriptor;
     typedef graph_traits<graph_t>::edge_descriptor edge_descriptor;
 
     // create graph
     graph_t graph;
-
     FILE *fp = fopen(vm["input-file"].as<std::string>().c_str(), "r");
     if (fp == NULL) {
         std::cerr << "Failed to open input file." << std::endl;
@@ -87,35 +84,37 @@ int main(int argc, char *argv[]) {
     mcb::read_dimacs_from_file(fp, graph);
     fclose(fp);
 
-    std::cout << "Graph has " << num_vertices(graph) << " vertices" << std::endl;
-    std::cout << "Graph has " << num_edges(graph) << " edges" << std::endl;
-    std::cout << std::flush;
+    if (world.rank() == 0) {
+        std::cout << "Graph has " << num_vertices(graph) << " vertices" << std::endl;
+        std::cout << "Graph has " << num_edges(graph) << " edges" << std::endl;
+        std::cout << std::flush;
+    }
 
     boost::timer::cpu_timer timer;
-
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
     mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), world, std::back_inserter(cycles));
-
     timer.stop();
 
-    if (vm["printcycles"].as<bool>()) {
-        for (auto it = cycles.begin(); it != cycles.end(); it++) {
-            auto cycle = *it;
+    if (world.rank() == 0) {
+        if (vm["printcycles"].as<bool>()) {
+            for (auto it = cycles.begin(); it != cycles.end(); it++) {
+                auto cycle = *it;
 
-            for (auto eit = cycle.begin(); eit != cycle.end(); eit++) {
-                std::cout << " " << *eit;
+                for (auto eit = cycle.begin(); eit != cycle.end(); eit++) {
+                    std::cout << " " << *eit;
+                }
+                std::cout << std::endl;
+
+                assert(mcb::is_cycle(graph, cycle));
             }
-            std::cout << std::endl;
-
-            assert(mcb::is_cycle(graph, cycle));
         }
-    }
 
-    std::cout << "weight= " << mcb_weight << std::endl;
+        std::cout << "weight = " << mcb_weight << std::endl;
 
-    if (vm["verbose"].as<bool>()) {
-        std::cout << "time:" << timer.format();
+        if (vm["verbose"].as<bool>()) {
+            std::cout << "time:" << timer.format();
+        }
     }
 
     return EXIT_SUCCESS;

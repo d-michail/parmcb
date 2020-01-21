@@ -28,6 +28,7 @@ namespace mcb {
     template<class Graph, class WeightMap> struct SPSubtree;
     template<class Graph, class WeightMap, bool ParallelUsingTBB> class SPTrees;
     template<class Graph, class WeightMap> class CandidateCycle;
+    template<class Graph> struct SerializableVertexTriplet;
 
     template<class Graph, class WeightMap>
     class SPNode {
@@ -132,7 +133,8 @@ namespace mcb {
             return g;
         }
 
-        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles() {
+        template<class EdgeIterator>
+        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles(EdgeIterator begin, EdgeIterator end) {
             // collect tree edges
             std::set<Edge> tree_edges;
             VertexIt vi, viend;
@@ -145,9 +147,10 @@ namespace mcb {
                 }
             }
 
-            // loop over all non-tree edges and create candidate cycles
+            // loop over (non-tree) provided edges and create candidate cycles
             std::vector<CandidateCycle<Graph, WeightMap>> cycles;
-            for (const auto &e : boost::make_iterator_range(boost::edges(g))) {
+            for (EdgeIterator it = begin; it != end; it++) {
+                Edge e = *it;
                 if (tree_edges.find(e) != tree_edges.end()) {
                     continue;
                 }
@@ -162,10 +165,47 @@ namespace mcb {
                     continue;
                 }
 
-                // optimization (TODO): find LCA and if not root, skip tree
-
                 WeightType cycle_weight = boost::get(weight_map, e) + v->weight() + u->weight();
                 cycles.emplace_back(*this, e, cycle_weight);
+            }
+            return cycles;
+        }
+
+        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles() {
+            auto itPair = boost::edges(g);
+            return create_candidate_cycles(itPair.first, itPair.second);
+        }
+
+        std::vector<SerializableVertexTriplet<Graph>> create_candidate_vertex_triplets() {
+            // collect tree edges
+            std::set<Edge> tree_edges;
+            VertexIt vi, viend;
+            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+                auto v = *vi;
+                auto vindex = index_map[v];
+                std::shared_ptr<SPNode<Graph, WeightMap>> n = tree_node_map[vindex];
+                if (n != nullptr && n->has_pred()) {
+                    tree_edges.insert(n->pred());
+                }
+            }
+
+            // loop over all non-tree edges and create candidate cycles
+            std::vector<SerializableVertexTriplet<Graph>> cycles;
+            for (const auto &e : boost::make_iterator_range(boost::edges(g))) {
+                if (tree_edges.find(e) != tree_edges.end()) {
+                    continue;
+                }
+
+                // non-tree edge
+                std::shared_ptr<SPNode<Graph, WeightMap>> v = node(boost::source(e, g));
+                if (v == nullptr) {
+                    continue;
+                }
+                std::shared_ptr<SPNode<Graph, WeightMap>> u = node(boost::target(e, g));
+                if (u == nullptr) {
+                    continue;
+                }
+                cycles.emplace_back(_source, boost::source(e, g), boost::target(e, g));
             }
 
             return cycles;
@@ -265,6 +305,27 @@ namespace mcb {
         WeightType _weight;
     };
 
+    template<class Graph>
+    struct SerializableVertexTriplet {
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+
+        SerializableVertexTriplet() {
+        }
+
+        SerializableVertexTriplet(Vertex v, Vertex u, Vertex w) :
+                v(v), u(u), w(w) {
+        }
+
+        template<typename Archive>
+        void serialize(Archive &ar, const unsigned) {
+            ar & v;
+            ar & u;
+            ar & w;
+        }
+
+        Vertex v, u, w;
+    };
+
     template<class Graph, class WeightMap, bool ParallelUsingTBB>
     class SPTrees {
     public:
@@ -272,7 +333,13 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        SPTrees(const Graph &g, const WeightMap &weight_map, const std::vector<Vertex>& fvs, bool sorted_cycles) :
+        SPTrees(const Graph &g, const WeightMap &weight_map, const std::vector<Vertex> &fvs, bool sorted_cycles) :
+                g(g), weight_map(weight_map), sorted_cycles(sorted_cycles) {
+            build_trees(fvs);
+        }
+
+        SPTrees(const Graph &g, const WeightMap &weight_map, const std::map<Vertex, std::vector<Edge>> &fvs,
+                bool sorted_cycles) :
                 g(g), weight_map(weight_map), sorted_cycles(sorted_cycles) {
             build_trees(fvs);
         }
@@ -289,7 +356,26 @@ namespace mcb {
         std::vector<CandidateCycle<Graph, WeightMap>> cycles;
         bool sorted_cycles;
 
-        void build_trees(const std::vector<Vertex>& fvs) {
+        void build_trees(const std::map<Vertex, std::vector<Edge>> &fvs) {
+            for (auto const &p : fvs) {
+                trees.emplace_back(g, weight_map, p.first);
+                std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = trees.back().create_candidate_cycles(
+                        p.second.begin(), p.second.end());
+                cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+            }
+
+            if (sorted_cycles) {
+                // sort
+                std::cout << "Sorting cycles" << std::endl;
+                std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                    return a.weight() < b.weight();
+                });
+            }
+
+            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+        }
+
+        void build_trees(const std::vector<Vertex> &fvs) {
             for (auto v : fvs) {
                 trees.emplace_back(g, weight_map, v);
             }

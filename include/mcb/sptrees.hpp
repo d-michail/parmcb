@@ -103,8 +103,8 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        SPTree(const Graph &g, const WeightMap &weight_map, const Vertex &source) :
-                g(g), weight_map(weight_map), index_map(boost::get(boost::vertex_index, g)), _source(source), tree_node_map(
+        SPTree(std::size_t id, const Graph &g, const WeightMap &weight_map, const Vertex &source) :
+                _id(id), _g(g), _weight_map(weight_map), _index_map(boost::get(boost::vertex_index, g)), _source(source), _tree_node_map(
                         boost::num_vertices(g)) {
             initialize();
         }
@@ -126,7 +126,7 @@ namespace mcb {
         }
 
         std::shared_ptr<SPNode<Graph, WeightMap>> node(const Vertex &v) const {
-            return tree_node_map[index_map[v]];
+            return _tree_node_map[_index_map[v]];
         }
 
         const Vertex& source() {
@@ -134,7 +134,11 @@ namespace mcb {
         }
 
         const Graph& graph() {
-            return g;
+            return _g;
+        }
+
+        const std::size_t id() const {
+            return _id;
         }
 
         template<class EdgeIterator>
@@ -142,10 +146,10 @@ namespace mcb {
             // collect tree edges
             std::set<Edge> tree_edges;
             VertexIt vi, viend;
-            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+            for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend; ++vi) {
                 auto v = *vi;
-                auto vindex = index_map[v];
-                std::shared_ptr<SPNode<Graph, WeightMap>> n = tree_node_map[vindex];
+                auto vindex = _index_map[v];
+                std::shared_ptr<SPNode<Graph, WeightMap>> n = _tree_node_map[vindex];
                 if (n != nullptr && n->has_pred()) {
                     tree_edges.insert(n->pred());
                 }
@@ -160,23 +164,23 @@ namespace mcb {
                 }
 
                 // non-tree edge
-                std::shared_ptr<SPNode<Graph, WeightMap>> v = node(boost::source(e, g));
+                std::shared_ptr<SPNode<Graph, WeightMap>> v = node(boost::source(e, _g));
                 if (v == nullptr) {
                     continue;
                 }
-                std::shared_ptr<SPNode<Graph, WeightMap>> u = node(boost::target(e, g));
+                std::shared_ptr<SPNode<Graph, WeightMap>> u = node(boost::target(e, _g));
                 if (u == nullptr) {
                     continue;
                 }
 
-                WeightType cycle_weight = boost::get(weight_map, e) + v->weight() + u->weight();
-                cycles.emplace_back(*this, e, cycle_weight);
+                WeightType cycle_weight = boost::get(_weight_map, e) + v->weight() + u->weight();
+                cycles.emplace_back(_id, e, cycle_weight);
             }
             return cycles;
         }
 
         std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles() {
-            auto itPair = boost::edges(g);
+            auto itPair = boost::edges(_g);
             return create_candidate_cycles(itPair.first, itPair.second);
         }
 
@@ -185,10 +189,10 @@ namespace mcb {
             // collect tree edges
             std::set<Edge> tree_edges;
             VertexIt vi, viend;
-            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+            for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend; ++vi) {
                 auto v = *vi;
-                auto vindex = index_map[v];
-                std::shared_ptr<SPNode<Graph, WeightMap>> n = tree_node_map[vindex];
+                auto vindex = _index_map[v];
+                std::shared_ptr<SPNode<Graph, WeightMap>> n = _tree_node_map[vindex];
                 if (n != nullptr && n->has_pred()) {
                     tree_edges.insert(n->pred());
                 }
@@ -196,17 +200,17 @@ namespace mcb {
 
             // loop over all non-tree edges and create candidate cycles
             std::vector<SerializableCandidateCycle<Graph>> cycles;
-            for (const auto &e : boost::make_iterator_range(boost::edges(g))) {
+            for (const auto &e : boost::make_iterator_range(boost::edges(_g))) {
                 if (tree_edges.find(e) != tree_edges.end()) {
                     continue;
                 }
 
                 // non-tree edge
-                std::shared_ptr<SPNode<Graph, WeightMap>> v = node(boost::source(e, g));
+                std::shared_ptr<SPNode<Graph, WeightMap>> v = node(boost::source(e, _g));
                 if (v == nullptr) {
                     continue;
                 }
-                std::shared_ptr<SPNode<Graph, WeightMap>> u = node(boost::target(e, g));
+                std::shared_ptr<SPNode<Graph, WeightMap>> u = node(boost::target(e, _g));
                 if (u == nullptr) {
                     continue;
                 }
@@ -217,52 +221,53 @@ namespace mcb {
         }
 
     private:
-        const Graph &g;
-        const WeightMap &weight_map;
-        const VertexIndexMapType index_map;
+        const std::size_t _id;
+        const Graph &_g;
+        const WeightMap &_weight_map;
+        const VertexIndexMapType _index_map;
         const Vertex _source;
 
-        std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>> tree_node_map;
+        std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>> _tree_node_map;
         std::shared_ptr<SPNode<Graph, WeightMap>> _root;
 
         void initialize() {
             // run shortest path
-            std::vector<WeightType> dist(boost::num_vertices(g), (std::numeric_limits<WeightType>::max)());
+            std::vector<WeightType> dist(boost::num_vertices(_g), (std::numeric_limits<WeightType>::max)());
             boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, WeightType>, Vertex, WeightType&> dist_map(
-                    mcb::detail::VertexIndexFunctor<Graph, WeightType>(dist, index_map));
-            std::vector<std::tuple<bool, Edge>> pred(boost::num_vertices(g), std::make_tuple(false, Edge()));
+                    mcb::detail::VertexIndexFunctor<Graph, WeightType>(dist, _index_map));
+            std::vector<std::tuple<bool, Edge>> pred(boost::num_vertices(_g), std::make_tuple(false, Edge()));
             boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge>>, Vertex,
                     std::tuple<bool, Edge>&> pred_map(
-                    mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, index_map));
-            dijkstra(g, weight_map, _source, dist_map, pred_map);
+                    mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, _index_map));
+            dijkstra(_g, _weight_map, _source, dist_map, pred_map);
 
             // create tree nodes and mapping
             VertexIt vi, viend;
-            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+            for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend; ++vi) {
                 auto v = *vi;
-                auto vindex = index_map[v];
+                auto vindex = _index_map[v];
                 auto p = boost::get(pred_map, v);
                 if (v == _source) {
-                    tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
+                    _tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
                             new SPNode<Graph, WeightMap>(dist[vindex]));
-                    _root = tree_node_map[vindex];
+                    _root = _tree_node_map[vindex];
                 } else if (std::get<0>(p)) {
                     Edge e = std::get<1>(p);
-                    tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
+                    _tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
                             new SPNode<Graph, WeightMap>(dist[vindex], e));
                 }
             }
 
             // link tree nodes
-            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+            for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend; ++vi) {
                 auto v = *vi;
                 auto p = boost::get(pred_map, v);
                 if (std::get<0>(p)) {
                     auto e = std::get<1>(p);
-                    auto u = boost::opposite(e, v, g);
-                    auto vindex = index_map[v];
-                    auto uindex = index_map[u];
-                    tree_node_map[uindex]->add_child(tree_node_map[vindex]);
+                    auto u = boost::opposite(e, v, _g);
+                    auto vindex = _index_map[v];
+                    auto uindex = _index_map[u];
+                    _tree_node_map[uindex]->add_child(_tree_node_map[vindex]);
                 }
             }
         }
@@ -275,7 +280,7 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        CandidateCycle(SPTree<Graph, WeightMap> &tree, const Edge &e, WeightType weight) :
+        CandidateCycle(std::size_t tree, const Edge &e, WeightType weight) :
                 _tree(tree), _e(e), _weight(weight) {
         }
 
@@ -292,11 +297,11 @@ namespace mcb {
             return *this;
         }
 
-        SPTree<Graph, WeightMap>& tree() {
-            return _tree.get();
+        std::size_t tree() const {
+            return _tree;
         }
 
-        const Edge& edge() {
+        const Edge& edge() const {
             return _e;
         }
 
@@ -305,7 +310,7 @@ namespace mcb {
         }
 
     private:
-        std::reference_wrapper<SPTree<Graph, WeightMap>> _tree;
+        std::size_t _tree;
         Edge _e;
         WeightType _weight;
     };
@@ -414,6 +419,14 @@ namespace mcb {
             return _compute_shortest_odd_cycle(edges);
         }
 
+        std::size_t get_number_of_trees() {
+            return trees.size();
+        }
+
+        mcb::SPTree<Graph, WeightMap>& get_tree(std::size_t n) {
+            return trees.at(n);
+        }
+
     private:
         const Graph &g;
         const WeightMap &weight_map;
@@ -425,7 +438,7 @@ namespace mcb {
         void build_trees(const std::map<Vertex, std::vector<Edge>> &fvs) {
             for (auto const &p : fvs) {
                 std::cout << "Building tree from " << p.first << std::endl;
-                SPTree<Graph, WeightMap> tree(g, weight_map, p.first);
+                SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
                 trees.push_back(tree);
                 std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(
                         p.second.begin(), p.second.end());
@@ -442,7 +455,7 @@ namespace mcb {
 
         void build_trees(const std::vector<Vertex> &fvs) {
             for (auto v : fvs) {
-                trees.emplace_back(g, weight_map, v);
+                trees.emplace_back(trees.size(), g, weight_map, v);
             }
             for (auto &tree : trees) {
                 std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
@@ -537,10 +550,11 @@ namespace mcb {
         std::tuple<std::set<Edge>, WeightType, bool> check_and_construct_candidate_cycle(
                 CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &edges, bool use_weight_limit,
                 WeightType weight_limit) {
-            std::cout << "Checking candidate cycle from source: " << c.tree().source() << " with edge " << c.edge() << std::endl;
 
-            std::shared_ptr<SPNode<Graph, WeightMap>> v = c.tree().node(boost::source(c.edge(), g));
-            std::shared_ptr<SPNode<Graph, WeightMap>> u = c.tree().node(boost::target(c.edge(), g));
+            std::cout << "Checking candidate cycle from source: " << trees[c.tree()].source() << " with edge " << c.edge() << std::endl;
+
+            std::shared_ptr<SPNode<Graph, WeightMap>> v = trees[c.tree()].node(boost::source(c.edge(), g));
+            std::shared_ptr<SPNode<Graph, WeightMap>> u = trees[c.tree()].node(boost::target(c.edge(), g));
 
             Edge e = c.edge();
             if (v->parity() ^ u->parity() ^ (edges.find(e) != edges.end())) {
@@ -556,7 +570,7 @@ namespace mcb {
 
                 // first part
                 Vertex w = boost::source(c.edge(), g);
-                std::shared_ptr<SPNode<Graph, WeightMap>> ws = c.tree().node(w);
+                std::shared_ptr<SPNode<Graph, WeightMap>> ws = trees[c.tree()].node(w);
                 while (ws->has_pred()) {
                     Edge a = ws->pred();
                     if (result.insert(a).second == false) {
@@ -569,7 +583,7 @@ namespace mcb {
                         break;
                     }
                     w = boost::opposite(a, w, g);
-                    ws = c.tree().node(w);
+                    ws = trees[c.tree()].node(w);
                 }
 
                 if (!valid) {
@@ -578,7 +592,7 @@ namespace mcb {
 
                 // second part
                 w = boost::target(c.edge(), g);
-                ws = c.tree().node(w);
+                ws = trees[c.tree()].node(w);
                 while (ws->has_pred()) {
                     Edge a = ws->pred();
                     if (result.insert(a).second == false) {
@@ -591,7 +605,7 @@ namespace mcb {
                         break;
                     }
                     w = boost::opposite(a, w, g);
-                    ws = c.tree().node(w);
+                    ws = trees[c.tree()].node(w);
                 }
 
                 if (!valid) {

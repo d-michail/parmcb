@@ -67,7 +67,8 @@ namespace mcb {
             }
             std::vector<SerializableCandidateCycle<Graph>> all_candidate_cycles;
             for (const auto &v : feedback_vertex_set) {
-                mcb::SPTree<Graph, WeightMap> tree(g, weight_map, v);
+                const std::size_t tree_id = 0;
+                mcb::SPTree<Graph, WeightMap> tree(tree_id, g, weight_map, v);
                 std::vector<SerializableCandidateCycle<Graph>> tree_candidate_cycles =
                         tree.create_serializable_candidate_cycles(forest_index);
                 std::ostringstream stream;

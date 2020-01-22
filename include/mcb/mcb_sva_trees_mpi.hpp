@@ -4,11 +4,11 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>
-#include <boost/timer/timer.hpp>
 
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
+#include <boost/mpi/timer.hpp>
 
 #include <cstddef>
 #include <functional>
@@ -35,6 +35,8 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
+        boost::mpi::timer total_timer;
+
         /*
          * Index the graph
          */
@@ -51,6 +53,7 @@ namespace mcb {
         for (std::size_t k = 0; k < csd; k++) {
             support.emplace_back(k);
         }
+
 
         /**
          * Scatter candidate cycles
@@ -147,7 +150,6 @@ namespace mcb {
                     std::get<1>(best_local_cycle), std::get<2>(best_local_cycle));
             SerializableMinOddCycle<Graph, WeightMap> global_min_odd_cycle;
 
-            // TODO: use is commutative!!
             boost::mpi::reduce(world, local_min_odd_cycle, global_min_odd_cycle,
                     SerializableMinOddCycleMinOp<Graph, WeightMap>(), 0);
 
@@ -168,6 +170,10 @@ namespace mcb {
                 mcb_weight += global_min_odd_cycle.weight;
                 *out++ = cyclek_edgelist;
             }
+        }
+
+        if (world.rank() == 0) {
+            std::cout << "Total time: " << total_timer.elapsed() << " (sec)" << std::endl;
         }
 
         return mcb_weight;

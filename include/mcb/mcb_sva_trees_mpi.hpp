@@ -62,21 +62,12 @@ namespace mcb {
              */
             std::vector<Vertex> feedback_vertex_set;
             mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
-            for (auto x : feedback_vertex_set) {
-                std::cout << "Feedback vertex set: " << x << std::endl;
-            }
             std::vector<SerializableCandidateCycle<Graph>> all_candidate_cycles;
             for (const auto &v : feedback_vertex_set) {
                 const std::size_t tree_id = 0;
                 mcb::SPTree<Graph, WeightMap> tree(tree_id, g, weight_map, v);
                 std::vector<SerializableCandidateCycle<Graph>> tree_candidate_cycles =
                         tree.create_serializable_candidate_cycles(forest_index);
-                std::ostringstream stream;
-                for (auto x : tree_candidate_cycles) {
-                    stream << "(" << x.v << "," << forest_index(x.e) << ")";
-                }
-                std::cout << "For vertex " << v << " candidate cycles are " << stream.str() << std::endl;
-
                 all_candidate_cycles.insert(all_candidate_cycles.end(), tree_candidate_cycles.begin(),
                         tree_candidate_cycles.end());
             }
@@ -102,12 +93,7 @@ namespace mcb {
                     candidate_cycles, 0);
         }
 
-        std::ostringstream stream;
-        for (auto x : candidate_cycles) {
-            stream << "(" << x.v << "," << forest_index(x.e) << ")";
-        }
-        std::cout << "Rank " << world.rank() << " received " << candidate_cycles.size() << " candidates: "
-                << stream.str() << std::endl;
+        std::cout << "Rank " << world.rank() << " received " << candidate_cycles.size() << " candidates" << std::endl;
 
         /*
          * Group local candidate cycles per vertex
@@ -122,27 +108,20 @@ namespace mcb {
             perVertexCandidates[s].push_back(e);
         }
 
-        std::cout << "Rank " << world.rank() << " grouped per source vertex" << std::endl;
-
         /*
          * Build trees for local candidate cycles
          */
         const bool sorted_cycles = false;
-        SPTrees<Graph, WeightMap, false> sp_trees(g, weight_map, perVertexCandidates, sorted_cycles);
-
-        /*
-         * Synchronize
-         */
-        world.barrier();
+        SPTrees<Graph, WeightMap, true> sp_trees(g, weight_map, perVertexCandidates, sorted_cycles);
 
         /*
          * Main loop
          */
         WeightType mcb_weight = WeightType();
         for (std::size_t k = 0; k < csd; k++) {
-            //if (k % 250 == 0) {
-            std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
-            //}
+            if (k % 250 == 0) {
+                std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
+            }
 
             // broadcast support vector
             if (world.rank() == 0) {
@@ -153,21 +132,13 @@ namespace mcb {
                 support[k] = received;
             }
 
-            std::cout << "Rank " << world.rank() << " has support = " << support[k] << std::endl;
+            //std::cout << "Rank " << world.rank() << " has support = " << support[k] << std::endl;
 
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
 
             std::tuple<std::set<Edge>, WeightType, bool> best_local_cycle = sp_trees.compute_shortest_odd_cycle(
                     signed_edges);
-
-            if (std::get<2>(best_local_cycle)) {
-                std::cout << "Rank " << world.rank() << " found best local cycle with weight = " << std::get<1>(best_local_cycle) << std::endl;
-            } else {
-                std::cout << "Rank " << world.rank() << " found no local" << std::endl;
-            }
-
-            world.barrier();
 
             std::vector<typename ForestIndex<Graph>::size_type> best_local_cycle_as_indices;
             convert_edges(std::get<0>(best_local_cycle),
@@ -197,8 +168,6 @@ namespace mcb {
                 mcb_weight += global_min_odd_cycle.weight;
                 *out++ = cyclek_edgelist;
             }
-
-            world.barrier();
         }
 
         return mcb_weight;

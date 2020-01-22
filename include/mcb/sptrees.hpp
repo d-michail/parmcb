@@ -437,7 +437,6 @@ namespace mcb {
 
         void build_trees(const std::map<Vertex, std::vector<Edge>> &fvs) {
             for (auto const &p : fvs) {
-                std::cout << "Building tree from " << p.first << std::endl;
                 SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
                 trees.push_back(tree);
                 std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(
@@ -550,8 +549,7 @@ namespace mcb {
         std::tuple<std::set<Edge>, WeightType, bool> check_and_construct_candidate_cycle(
                 CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &edges, bool use_weight_limit,
                 WeightType weight_limit) {
-
-            std::cout << "Checking candidate cycle from source: " << trees[c.tree()].source() << " with edge " << c.edge() << std::endl;
+            //std::cout << "Checking candidate cycle from source: " << trees[c.tree()].source() << " with edge " << c.edge() << std::endl;
 
             std::shared_ptr<SPNode<Graph, WeightMap>> v = trees[c.tree()].node(boost::source(c.edge(), g));
             std::shared_ptr<SPNode<Graph, WeightMap>> u = trees[c.tree()].node(boost::target(c.edge(), g));

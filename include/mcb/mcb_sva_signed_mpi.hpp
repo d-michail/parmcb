@@ -30,7 +30,7 @@
 namespace mcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_mpi(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_mpi(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out, boost::mpi::communicator &world, const std::size_t hardware_concurrency_hint = 0) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -123,10 +123,68 @@ namespace mcb {
                         }
                     }
                 }
-                //} else if (signed_edges.size() < boost::num_vertices(g)) {
-                // TODO
-                // split work and send to other processes
-                // collect their work
+            } else if (signed_edges.size() < boost::num_vertices(g)) {
+                /*
+                 * Heuristic in case number of signed edges is small compared to the number of vertices.
+                 */
+                std::map<Edge, std::set<Edge>> hidden_edges_per_edge;
+                std::vector<Edge> signed_edges_as_vector;
+                std::set<Edge> tmp_signed_edges = signed_edges;
+                while (!tmp_signed_edges.empty()) {
+                    auto bit = tmp_signed_edges.begin();
+                    hidden_edges_per_edge.insert(std::make_pair(*bit, tmp_signed_edges));
+                    signed_edges_as_vector.push_back(*bit);
+                    tmp_signed_edges.erase(bit);
+                }
+
+                std::vector<Edge> local_signed_edges_as_vector;
+                std::size_t total = signed_edges_as_vector.size();
+                std::size_t stride = ceil((double) total / world.size());
+                std::size_t istart = world.rank() * stride;
+                std::size_t iend = istart + stride;
+                for (std::size_t i = istart; i < iend && i < total; i++) {
+                    local_signed_edges_as_vector.push_back(signed_edges_as_vector[i]);
+                }
+
+                std::tuple<std::set<Edge>, WeightType, bool> best_local_cycle = tbb::parallel_reduce(
+                        tbb::blocked_range<std::size_t>(0, local_signed_edges_as_vector.size()),
+                        std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
+                        [&](tbb::blocked_range<std::size_t> r, auto running_min) {
+                            for (std::size_t i = r.begin(); i < r.end(); i++) {
+                                auto se = local_signed_edges_as_vector.at(i);
+                                auto se_v = boost::source(se, g);
+                                auto se_u = boost::target(se, g);
+                                auto hidden_edges = hidden_edges_per_edge.at(se);
+                                auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, hidden_edges,
+                                        true, se_v, true, se_u, true, std::get<2>(running_min),
+                                        std::get<1>(running_min));
+                                if (std::get<2>(res) && std::get<0>(res).find(se) == std::get<0>(res).end()) {
+                                    std::get<1>(res) += boost::get(weight_map, se);
+                                    if (!std::get<2>(running_min)
+                                            || compare(std::get<1>(res), std::get<1>(running_min))) {
+                                        std::get<0>(res).insert(se);
+                                        running_min = res;
+                                    }
+                                }
+                            }
+                            return running_min;
+                        },
+                        cycle_min);
+
+                std::vector<typename ForestIndex<Graph>::size_type> best_local_cycle_as_indices;
+                convert_edges(std::get<0>(best_local_cycle),
+                        std::inserter(best_local_cycle_as_indices, best_local_cycle_as_indices.end()), forest_index);
+                SerializableMinOddCycle<Graph, WeightMap> local_min_odd_cycle(best_local_cycle_as_indices,
+                        std::get<1>(best_local_cycle), std::get<2>(best_local_cycle));
+                SerializableMinOddCycle<Graph, WeightMap> global_min_odd_cycle;
+
+                boost::mpi::reduce(world, local_min_odd_cycle, global_min_odd_cycle,
+                        SerializableMinOddCycleMinOp<Graph, WeightMap>(), 0);
+
+                convert_edges(global_min_odd_cycle.edges, std::inserter(std::get<0>(best), std::get<0>(best).end()),
+                        forest_index);
+                std::get<1>(best) = global_min_odd_cycle.weight;
+                std::get<2>(best) = global_min_odd_cycle.exists;
             } else {
                 // split implicitly all vertices
                 std::vector<Vertex> localVertices;
@@ -168,7 +226,8 @@ namespace mcb {
                 boost::mpi::reduce(world, local_min_odd_cycle, global_min_odd_cycle,
                         SerializableMinOddCycleMinOp<Graph, WeightMap>(), 0);
 
-                convert_edges(global_min_odd_cycle.edges, std::inserter(std::get<0>(best), std::get<0>(best).end()), forest_index);
+                convert_edges(global_min_odd_cycle.edges, std::inserter(std::get<0>(best), std::get<0>(best).end()),
+                        forest_index);
                 std::get<1>(best) = global_min_odd_cycle.weight;
                 std::get<2>(best) = global_min_odd_cycle.exists;
             }

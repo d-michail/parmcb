@@ -25,7 +25,7 @@
 namespace mcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_parallel2(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_tbb2(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;

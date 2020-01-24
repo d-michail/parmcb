@@ -122,7 +122,7 @@ TEST_CASE("parallel sva signed"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_signed_parallel(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = mcb::mcb_sva_signed_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
@@ -186,7 +186,7 @@ TEST_CASE("parallel sva trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_trees_parallel(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = mcb::mcb_sva_trees_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;

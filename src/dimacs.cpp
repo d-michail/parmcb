@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     if (vm["signed"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), cores);
+            mcb_weight = mcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), cores);
         } else {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
             mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     } else {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees_parallel(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = mcb::mcb_sva_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
             std::cout << "Using MCB_SVA_TREES" << std::endl;
             mcb_weight = mcb::mcb_sva_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));

@@ -29,7 +29,7 @@ namespace mcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_trees_mpi(const Graph &g, WeightMap weight_map,
-            boost::mpi::communicator &world, CycleOutputIterator out) {
+            CycleOutputIterator out, boost::mpi::communicator &world) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;

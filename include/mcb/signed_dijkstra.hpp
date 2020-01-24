@@ -186,11 +186,11 @@ namespace mcb {
     } // detail
 
     template<class Graph, class WeightMap, class SignedEdges, class HiddenEdges>
-    std::pair<std::set<typename boost::graph_traits<Graph>::edge_descriptor>,
-            typename boost::property_traits<WeightMap>::value_type> signed_dijkstra(const Graph &g,
+    std::tuple<std::set<typename boost::graph_traits<Graph>::edge_descriptor>,
+            typename boost::property_traits<WeightMap>::value_type, bool> signed_dijkstra(const Graph &g,
             const WeightMap &weight_map, const SignedEdges &signed_edges, const HiddenEdges &hidden_edges,
             bool use_hidden_edges, const typename boost::graph_traits<Graph>::vertex_descriptor &s, bool s_pos,
-            const typename boost::graph_traits<Graph>::vertex_descriptor &t, bool t_pos,
+            const typename boost::graph_traits<Graph>::vertex_descriptor &t, bool t_pos, bool use_cycle_weight_limit,
             const typename boost::property_traits<WeightMap>::value_type &cycle_weight_limit) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -216,9 +216,9 @@ namespace mcb {
             DistanceType d_u = frontier.get_dist(signed_u);
             auto u = signed_u.first;
 
-            if (!compare(d_u, cycle_weight_limit)) {
+            if (use_cycle_weight_limit && !compare(d_u, cycle_weight_limit)) {
                 // reached limit
-                return std::make_pair(std::set<Edge> { }, distance_inf);
+                return std::make_tuple(std::set<Edge> { }, distance_inf, false);
             }
 
             if (signed_u == signed_t) { // found target
@@ -236,7 +236,7 @@ namespace mcb {
                     }
                     signed_cur = std::get<0>(p);
                 }
-                return std::make_pair(cycle, cycle_weight);
+                return std::make_tuple(cycle, cycle_weight, true);
             }
 
             auto eiRange = boost::out_edges(signed_u.first, g);
@@ -256,7 +256,7 @@ namespace mcb {
                 }
                 const WeightType c = combine(d_u, get(weight_map, e));
 
-                if (!compare(c, cycle_weight_limit)) {
+                if (use_cycle_weight_limit && !compare(c, cycle_weight_limit)) {
                     // never insert if more than current minimum
                     continue;
                 }
@@ -269,15 +269,15 @@ namespace mcb {
 
         }
 
-        return std::make_pair(std::set<Edge> { }, distance_inf);
+        return std::make_tuple(std::set<Edge> { }, distance_inf, false);
     }
 
     template<class Graph, class WeightMap, class SignedEdges, class HiddenEdges>
-    std::pair<std::set<typename boost::graph_traits<Graph>::edge_descriptor>,
-            typename boost::property_traits<WeightMap>::value_type> bidirectional_signed_dijkstra(const Graph &g,
+    std::tuple<std::set<typename boost::graph_traits<Graph>::edge_descriptor>,
+            typename boost::property_traits<WeightMap>::value_type, bool> bidirectional_signed_dijkstra(const Graph &g,
             const WeightMap &weight_map, const SignedEdges &signed_edges, const HiddenEdges &hidden_edges,
             bool use_hidden_edges, const typename boost::graph_traits<Graph>::vertex_descriptor &s, bool s_pos,
-            const typename boost::graph_traits<Graph>::vertex_descriptor &t, bool t_pos,
+            const typename boost::graph_traits<Graph>::vertex_descriptor &t, bool t_pos, bool use_cycle_weight_limit,
             const typename boost::property_traits<WeightMap>::value_type &cycle_weight_limit) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -304,12 +304,14 @@ namespace mcb {
         std::reference_wrapper<mcb::detail::search_frontier<Graph, WeightMap>> frontier = std::ref(f_frontier);
         std::reference_wrapper<mcb::detail::search_frontier<Graph, WeightMap>> other_frontier = std::ref(b_frontier);
         DistanceType best_path = distance_inf;
+        bool best_path_set = false;
         SignedVertex best_path_common_vertex;
 
         while (true) {
             // stopping condition
             if (frontier.get().queue.empty() || other_frontier.get().queue.empty()
-                    || !compare(combine(frontier.get().find_min(), other_frontier.get().find_min()), best_path)) {
+                    || (best_path_set
+                            && !compare(combine(frontier.get().find_min(), other_frontier.get().find_min()), best_path))) {
                 break;
             }
 
@@ -318,9 +320,9 @@ namespace mcb {
             DistanceType d_u = frontier.get().get_dist(signed_u);
             auto u = signed_u.first;
 
-            if (!compare(d_u, cycle_weight_limit)) {
+            if (use_cycle_weight_limit && !compare(d_u, cycle_weight_limit)) {
                 // reached limit
-                return std::make_pair(std::set<Edge> { }, distance_inf);
+                return std::make_tuple(std::set<Edge> { }, distance_inf, false);
             }
 
             auto eiRange = boost::out_edges(signed_u.first, g);
@@ -339,7 +341,7 @@ namespace mcb {
                 }
 
                 const WeightType c = combine(d_u, get(weight_map, e));
-                if (!frontier.get().compare(c, cycle_weight_limit)) {
+                if (use_cycle_weight_limit && !frontier.get().compare(c, cycle_weight_limit)) {
                     // never insert if more than current minimum
                     continue;
                 }
@@ -353,6 +355,7 @@ namespace mcb {
                     // check path with w's distance from other frontier
                     DistanceType path_distance = combine(c, other_frontier.get().get_dist(signed_w));
                     if (compare(path_distance, best_path)) {
+                        best_path_set = true;
                         best_path = path_distance;
                         best_path_common_vertex = signed_w;
                     }
@@ -364,42 +367,42 @@ namespace mcb {
             std::swap(frontier, other_frontier);
         }
 
-        // create path if found
-        if (compare(best_path, distance_inf) && compare(best_path, cycle_weight_limit)) {
-            std::set<Edge> cycle;
-            WeightType cycle_weight = WeightType();
-
-            SignedVertex signed_cur = best_path_common_vertex;
-            SignedVertex signed_goal = frontier.get().get_source();
-            while (signed_cur != signed_goal) {
-                Predecessor p = frontier.get().get_pred(signed_cur);
-                Edge e = std::get<2>(p);
-                if (!cycle.insert(e).second) {
-                    // duplicate edge, discard cycle
-                    return std::make_pair(std::set<Edge> { }, distance_inf);
-                } else {
-                    cycle_weight += boost::get(weight_map, e);
-                }
-                signed_cur = std::get<0>(p);
-            }
-
-            signed_cur = best_path_common_vertex;
-            signed_goal = other_frontier.get().get_source();
-            while (signed_cur != signed_goal) {
-                Predecessor p = other_frontier.get().get_pred(signed_cur);
-                Edge e = std::get<2>(p);
-                if (!cycle.insert(e).second) {
-                    // duplicate edge, discard cycle
-                    return std::make_pair(std::set<Edge> { }, distance_inf);
-                } else {
-                    cycle_weight += boost::get(weight_map, e);
-                }
-                signed_cur = std::get<0>(p);
-            }
-            return std::make_pair(cycle, cycle_weight);
+        if (!best_path_set || (use_cycle_weight_limit && !compare(best_path, cycle_weight_limit))) {
+            return std::make_tuple(std::set<Edge> { }, distance_inf, false);
         }
 
-        return std::make_pair(std::set<Edge> { }, distance_inf);
+        // create path if found
+        std::set<Edge> cycle;
+        WeightType cycle_weight = WeightType();
+
+        SignedVertex signed_cur = best_path_common_vertex;
+        SignedVertex signed_goal = frontier.get().get_source();
+        while (signed_cur != signed_goal) {
+            Predecessor p = frontier.get().get_pred(signed_cur);
+            Edge e = std::get<2>(p);
+            if (!cycle.insert(e).second) {
+                // duplicate edge, discard cycle
+                return std::make_tuple(std::set<Edge> { }, distance_inf, false);
+            } else {
+                cycle_weight += boost::get(weight_map, e);
+            }
+            signed_cur = std::get<0>(p);
+        }
+
+        signed_cur = best_path_common_vertex;
+        signed_goal = other_frontier.get().get_source();
+        while (signed_cur != signed_goal) {
+            Predecessor p = other_frontier.get().get_pred(signed_cur);
+            Edge e = std::get<2>(p);
+            if (!cycle.insert(e).second) {
+                // duplicate edge, discard cycle
+                return std::make_tuple(std::set<Edge> { }, distance_inf, false);
+            } else {
+                cycle_weight += boost::get(weight_map, e);
+            }
+            signed_cur = std::get<0>(p);
+        }
+        return std::make_tuple(cycle, cycle_weight, true);
     }
 
 } // mcb

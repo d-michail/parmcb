@@ -111,58 +111,55 @@ namespace mcb {
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
             std::less<WeightType> compare = std::less<WeightType>();
-            WeightType weight_inf = (std::numeric_limits<WeightType>::max)();
-            std::set<Edge> best_cycle;
-            WeightType best_cycle_weight = weight_inf;
+            std::tuple<std::set<Edge>, WeightType, bool> best = std::make_tuple(std::set<Edge> { },
+                    (std::numeric_limits<WeightType>::max)(), false);
 
-            typedef std::pair<std::set<Edge>, WeightType> cycle_t;
+            typedef std::tuple<std::set<Edge>, WeightType, bool> cycle_t;
             auto cycle_min = [compare](const cycle_t &c1, const cycle_t &c2) {
-                if (!compare(c2.second, c1.second)) {
+                if (!std::get<2>(c1) || !std::get<2>(c2)) {
+                    if (std::get<2>(c1)) {
+                        return c1;
+                    } else {
+                        return c2;
+                    }
+                }
+                // both valid, compare
+                if (!compare(std::get<1>(c2), std::get<1>(c1))) {
                     return c1;
                 }
                 return c2;
             };
 
             if (signed_edges.size() >= boost::num_vertices(g)) {
-                boost::tie(best_cycle, best_cycle_weight) = tbb::parallel_reduce(
-                        tbb::blocked_range<std::size_t>(0, boost::num_vertices(g)),
-                        std::make_pair(std::set<Edge>(), (std::numeric_limits<WeightType>::max)()),
+                best = tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, boost::num_vertices(g)),
+                        std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
                         [&](tbb::blocked_range<std::size_t> r, auto running_min) {
                             for (std::size_t i = r.begin(); i < r.end(); i++) {
                                 auto v = vertices[i];
                                 const bool use_hidden_edges = false;
                                 auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges,
-                                        std::set<Edge> { }, use_hidden_edges, v, true, v, false, running_min.second);
-                                if (!res.first.empty() && compare(res.second, weight_inf)
-                                        && compare(res.second, running_min.second)) {
-                                    running_min.first = res.first;
-                                    running_min.second = res.second;
+                                        std::set<Edge> { }, use_hidden_edges, v, true, v, false,
+                                        std::get<2>(running_min), std::get<1>(running_min));
+                                if (std::get<2>(res)
+                                        && (!std::get<2>(running_min)
+                                                || compare(std::get<1>(res), std::get<1>(running_min)))) {
+                                    running_min = res;
                                 }
                             }
                             return running_min;
                         },
                         cycle_min);
             } else if (signed_edges.size() == 1) {
-                /*
-                 * Heuristic in case number of signed edges is small compared to the number of vertices.
-                 */
-                std::set<Edge> hidden_edges;
-                std::copy(signed_edges.begin(), signed_edges.end(), std::inserter(hidden_edges, hidden_edges.begin()));
-                for (auto sei = signed_edges.begin(); sei != signed_edges.end(); ++sei) {
-                    auto se = *sei;
-                    auto se_v = boost::source(se, g);
-                    auto se_u = boost::target(se, g);
-                    auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, hidden_edges, true, se_v,
-                            true, se_u, true, best_cycle_weight);
-                    hidden_edges.erase(hidden_edges.begin());
-                    if (!res.first.empty() && compare(res.second, weight_inf)
-                            && res.first.find(se) == res.first.end()) {
-                        res.second += boost::get(weight_map, se);
-                        if (compare(res.second, best_cycle_weight)) {
-                            res.first.insert(se);
-                            best_cycle = res.first;
-                            best_cycle_weight = res.second;
-                        }
+                auto se = *signed_edges.begin();
+                auto se_v = boost::source(se, g);
+                auto se_u = boost::target(se, g);
+                auto res = bidirectional_signed_dijkstra(g, weight_map, std::set<Edge> { }, signed_edges, true, se_v,
+                        true, se_u, true, std::get<2>(best), std::get<1>(best));
+                if (std::get<2>(res) && std::get<0>(res).find(se) == std::get<0>(res).end()) {
+                    std::get<1>(res) += boost::get(weight_map, se);
+                    if (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(best))) {
+                        std::get<0>(res).insert(se);
+                        best = res;
                     }
                 }
             } else {
@@ -178,9 +175,8 @@ namespace mcb {
                     signed_edges_as_vector.push_back(*bit);
                     tmp_signed_edges.erase(bit);
                 }
-                boost::tie(best_cycle, best_cycle_weight) = tbb::parallel_reduce(
-                        tbb::blocked_range<std::size_t>(0, signed_edges_as_vector.size()),
-                        std::make_pair(std::set<Edge>(), (std::numeric_limits<WeightType>::max)()),
+                best = tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, signed_edges_as_vector.size()),
+                        std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
                         [&](tbb::blocked_range<std::size_t> r, auto running_min) {
                             for (std::size_t i = r.begin(); i < r.end(); i++) {
                                 auto se = signed_edges_as_vector.at(i);
@@ -188,14 +184,13 @@ namespace mcb {
                                 auto se_u = boost::target(se, g);
                                 auto hidden_edges = hidden_edges_per_edge.at(se);
                                 auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, hidden_edges,
-                                        true, se_v, true, se_u, true, running_min.second);
-                                if (!res.first.empty() && compare(res.second, weight_inf)
-                                        && res.first.find(se) == res.first.end()) {
-                                    res.second += boost::get(weight_map, se);
-                                    if (compare(res.second, running_min.second)) {
-                                        res.first.insert(se);
-                                        running_min.first = res.first;
-                                        running_min.second = res.second;
+                                        true, se_v, true, se_u, true, std::get<2>(running_min),
+                                        std::get<1>(running_min));
+                                if (std::get<2>(res) && std::get<0>(res).find(se) == std::get<0>(res).end()) {
+                                    std::get<1>(res) += boost::get(weight_map, se);
+                                    if (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(best))) {
+                                        std::get<0>(res).insert(se);
+                                        best = res;
                                     }
                                 }
                             }
@@ -210,7 +205,7 @@ namespace mcb {
              */
             support_timer.resume();
             std::set<std::size_t> cyclek;
-            convert_edges(best_cycle, std::inserter(cyclek, cyclek.end()), forest_index);
+            convert_edges(std::get<0>(best), std::inserter(cyclek, cyclek.end()), forest_index);
             tbb::parallel_for(tbb::blocked_range<std::size_t>(k + 1, csd),
                     [&](const tbb::blocked_range<std::size_t> &r) {
                         auto e = r.end();
@@ -226,9 +221,9 @@ namespace mcb {
              * Output new cycle
              */
             std::list<Edge> cyclek_edgelist;
-            std::copy(best_cycle.begin(), best_cycle.end(), std::back_inserter(cyclek_edgelist));
+            std::copy(std::get<0>(best).begin(), std::get<0>(best).end(), std::back_inserter(cyclek_edgelist));
             *out++ = cyclek_edgelist;
-            mcb_weight += best_cycle_weight;
+            mcb_weight += std::get<1>(best);
         }
 
         std::cout << "cycle   timer" << cycle_timer.format();

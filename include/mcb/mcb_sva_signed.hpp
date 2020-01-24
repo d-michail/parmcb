@@ -73,9 +73,8 @@ namespace mcb {
              */
             cycle_timer.resume();
             std::less<WeightType> compare = std::less<WeightType>();
-            WeightType weight_inf = (std::numeric_limits<WeightType>::max)();
-            std::set<Edge> best_cycle;
-            WeightType best_cycle_weight = weight_inf;
+            std::tuple<std::set<Edge>, WeightType, bool> best = std::make_tuple(std::set<Edge>(),
+                    (std::numeric_limits<WeightType>::max)(), false);
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
 
@@ -84,12 +83,11 @@ namespace mcb {
                 for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
                     auto v = *vi;
                     const bool use_hidden_edges = false;
-                    auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, std::set<Edge> { }, use_hidden_edges, v,
-                            true, v, false, best_cycle_weight);
-                    if (!res.first.empty() && compare(res.second, weight_inf)
-                            && compare(res.second, best_cycle_weight)) {
-                        best_cycle_weight = res.second;
-                        best_cycle = res.first;
+                    auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, std::set<Edge> { },
+                            use_hidden_edges, v, true, v, false, std::get<2>(best), std::get<1>(best));
+                    if (std::get<2>(res) && (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(best)))) {
+                        best = res;
+                        assert(std::get<2>(best));
                     }
                 }
             } else {
@@ -103,19 +101,25 @@ namespace mcb {
                     auto se_v = boost::source(se, g);
                     auto se_u = boost::target(se, g);
                     auto res = bidirectional_signed_dijkstra(g, weight_map, signed_edges, hidden_edges, true, se_v,
-                            true, se_u, true, best_cycle_weight);
+                            true, se_u, true, std::get<2>(best), std::get<1>(best));
                     hidden_edges.erase(hidden_edges.begin());
-                    if (!res.first.empty() && compare(res.second, weight_inf)
-                            && res.first.find(se) == res.first.end()) {
-                        res.second += boost::get(weight_map, se);
-                        if (compare(res.second, best_cycle_weight)) {
-                            best_cycle_weight = res.second;
-                            res.first.insert(se);
-                            best_cycle = res.first;
+                    if (std::get<2>(res) && std::get<0>(res).find(se) == std::get<0>(res).end()) {
+                        std::get<1>(res) += boost::get(weight_map, se);
+                        if (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(best))) {
+                            std::get<0>(res).insert(se);
+                            best = res;
+                            assert(std::get<2>(best));
                         }
                     }
                 }
             }
+            if (!std::get<2>(best)) {
+                std::cout << "Warning best seems to be missing" << std::endl;
+                for(auto x: std::get<0>(best)) {
+                    std::cout << "cycle contains edge " << x << std::endl;
+                }
+            }
+            //assert(std::get<2>(best));
             cycle_timer.stop();
 
             /*
@@ -123,7 +127,7 @@ namespace mcb {
              */
             support_timer.resume();
             std::set<std::size_t> cyclek;
-            convert_edges(best_cycle, std::inserter(cyclek, cyclek.end()), forest_index);
+            convert_edges(std::get<0>(best), std::inserter(cyclek, cyclek.end()), forest_index);
             for (std::size_t l = k + 1; l < csd; l++) {
                 if (support[l] * cyclek == 1) {
                     support[l] += support[k];
@@ -135,9 +139,9 @@ namespace mcb {
              * Output new cycle
              */
             std::list<Edge> cyclek_edgelist;
-            std::copy(best_cycle.begin(), best_cycle.end(), std::back_inserter(cyclek_edgelist));
+            std::copy(std::get<0>(best).begin(), std::get<0>(best).end(), std::back_inserter(cyclek_edgelist));
             *out++ = cyclek_edgelist;
-            mcb_weight += best_cycle_weight;
+            mcb_weight += std::get<1>(best);
         }
 
         std::cout << "cycle   timer" << cycle_timer.format();

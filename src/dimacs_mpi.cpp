@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     boost::timer::cpu_timer timer;
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
-    mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), world, std::back_inserter(cycles));
+    mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
     timer.stop();
 
     if (world.rank() == 0) {

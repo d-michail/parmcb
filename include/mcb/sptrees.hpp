@@ -415,7 +415,7 @@ namespace mcb {
             build_trees(fvs);
         }
 
-        std::tuple<std::set<Edge>, double, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
+        std::tuple<std::set<Edge>, WeightType, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
             return _compute_shortest_odd_cycle(edges);
         }
 
@@ -470,7 +470,7 @@ namespace mcb {
         }
 
         template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::tuple<std::set<Edge>, double, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<!is_tbb_enabled>::type* = 0) {
 
             for (auto &tree : trees) {
@@ -501,7 +501,7 @@ namespace mcb {
         }
 
         template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::tuple<std::set<Edge>, double, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<is_tbb_enabled>::type* = 0) {
 
             tbb::parallel_for(tbb::blocked_range<std::size_t>(0, trees.size()),

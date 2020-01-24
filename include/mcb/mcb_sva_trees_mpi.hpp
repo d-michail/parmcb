@@ -54,7 +54,6 @@ namespace mcb {
             support.emplace_back(k);
         }
 
-
         /**
          * Scatter candidate cycles
          */

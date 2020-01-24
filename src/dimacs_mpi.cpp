@@ -16,6 +16,7 @@
 #include <boost/mpi/communicator.hpp>
 
 #include <mcb/mcb_sva_trees_mpi.hpp>
+#include <mcb/mcb_sva_signed_mpi.hpp>
 #include <mcb/util.hpp>
 
 using namespace boost;
@@ -33,6 +34,7 @@ int main(int argc, char *argv[]) {
         desc.add_options()
                 ("help,h", "Help")
                 ("verbose,v", po::value<bool>()->default_value(false)->implicit_value(true), "Verbose")
+                ("signed,s", po::value<bool>()->default_value(false), "Use one of either (a) signed graph or (b) shortest path trees")
                 ("printcycles", po::value<bool>()->default_value(false)->implicit_value(true), "Print cycles")
                 ("input-file,I",po::value<std::string>(), "Input filename");
         // @formatter:on
@@ -93,7 +95,12 @@ int main(int argc, char *argv[]) {
     boost::timer::cpu_timer timer;
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
-    mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+
+    if (vm["signed"].as<bool>()) {
+        mcb_weight = mcb::mcb_sva_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+    } else {
+        mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+    }
     timer.stop();
 
     if (world.rank() == 0) {

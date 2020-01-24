@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SVA_SIGNED_PARALLEL2_HPP_
-#define LIBMCB_SVA_SIGNED_PARALLEL2_HPP_
+#ifndef LIBMCB_SVA_SIGNED_TBB2_HPP_
+#define LIBMCB_SVA_SIGNED_TBB2_HPP_
 
 #include <cstddef>
 #include <functional>

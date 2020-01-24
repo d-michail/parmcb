@@ -179,9 +179,9 @@ namespace mcb {
                                         std::get<1>(running_min));
                                 if (std::get<2>(res) && std::get<0>(res).find(se) == std::get<0>(res).end()) {
                                     std::get<1>(res) += boost::get(weight_map, se);
-                                    if (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(best))) {
+                                    if (!std::get<2>(best) || compare(std::get<1>(res), std::get<1>(running_min))) {
                                         std::get<0>(res).insert(se);
-                                        best = res;
+                                        running_min = res;
                                     }
                                 }
                             }

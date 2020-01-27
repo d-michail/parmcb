@@ -15,10 +15,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 
-#include <mcb/util.hpp>
-#include <mcb/mcb_sva_trees_mpi.hpp>
-#include <mcb/mcb_sva_signed_mpi.hpp>
-
+#include <mcb/mpi/mcb.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;

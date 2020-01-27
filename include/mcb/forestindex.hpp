@@ -1,5 +1,5 @@
-#ifndef LIBMCB_FORESTINDEX_HPP_
-#define LIBMCB_FORESTINDEX_HPP_
+#ifndef MCB_FORESTINDEX_HPP_
+#define MCB_FORESTINDEX_HPP_
 
 #include <vector>
 #include <map>

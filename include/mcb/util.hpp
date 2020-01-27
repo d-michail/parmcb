@@ -1,5 +1,5 @@
-#ifndef LIBMCB_VERIFY_HPP_
-#define LIBMCB_VERIFY_HPP_
+#ifndef MCB_VERIFY_HPP_
+#define MCB_VERIFY_HPP_
 
 #include <vector>
 #include <set>

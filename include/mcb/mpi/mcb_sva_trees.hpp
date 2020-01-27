@@ -1,5 +1,5 @@
-#ifndef LIBMCB_MCB_SVA_TREES_MPI_HPP_
-#define LIBMCB_MCB_SVA_TREES_MPI_HPP_
+#ifndef MCB_SVA_TREES_MPI_HPP_
+#define MCB_SVA_TREES_MPI_HPP_
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -23,7 +23,7 @@
 #include <mcb/spvecgf2.hpp>
 #include <mcb/fvs.hpp>
 #include <mcb/util.hpp>
-#include <mcb/sptrees_mpi.hpp>
+#include <mcb/mpi/sptrees.hpp>
 
 namespace mcb {
 

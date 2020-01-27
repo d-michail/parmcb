@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SVA_SIGNED_TBB_HPP_
-#define LIBMCB_SVA_SIGNED_TBB_HPP_
+#ifndef MCB_SVA_SIGNED_TBB_HPP_
+#define MCB_SVA_SIGNED_TBB_HPP_
 
 #include <cstddef>
 #include <functional>

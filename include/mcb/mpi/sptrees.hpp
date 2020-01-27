@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SPTREES_MPI_HPP_
-#define LIBMCB_SPTREES_MPI_HPP_
+#ifndef MCB_SPTREES_MPI_HPP_
+#define MCB_SPTREES_MPI_HPP_
 
 #include <mcb/sptrees.hpp>
 

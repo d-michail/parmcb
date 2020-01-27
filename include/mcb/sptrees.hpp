@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SPTREES_HPP_
-#define LIBMCB_SPTREES_HPP_
+#ifndef MCB_SPTREES_HPP_
+#define MCB_SPTREES_HPP_
 
 #include <iostream>
 

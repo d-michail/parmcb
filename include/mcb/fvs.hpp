@@ -1,5 +1,5 @@
-#ifndef LIBMCB_FVS_HPP_
-#define LIBMCB_FVS_HPP_
+#ifndef MCB_FVS_HPP_
+#define MCB_FVS_HPP_
 
 #include <iostream>
 

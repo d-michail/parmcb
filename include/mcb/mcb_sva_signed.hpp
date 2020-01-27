@@ -1,5 +1,5 @@
-#ifndef LIBMCB_MCB_SVA_SIGNED_HPP_
-#define LIBMCB_MCB_SVA_SIGNED_HPP_
+#ifndef MCB_SVA_SIGNED_HPP_
+#define MCB_SVA_SIGNED_HPP_
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>

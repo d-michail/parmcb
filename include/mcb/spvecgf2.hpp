@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SPVECGF2_HPP_
-#define LIBMCB_SPVECGF2_HPP_
+#ifndef MCB_SPVECGF2_HPP_
+#define MCB_SPVECGF2_HPP_
 
 #include <vector>
 #include <set>

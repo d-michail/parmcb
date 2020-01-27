@@ -1,4 +1,8 @@
+#ifndef _MCB_CONFIG_HPP_
+#define _MCB_CONFIG_HPP_
 
 #cmakedefine MCB_HAVE_BOOST
 #cmakedefine MCB_HAVE_TBB
 #cmakedefine MCB_HAVE_MPI
+
+#endif

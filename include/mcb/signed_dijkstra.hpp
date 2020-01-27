@@ -1,5 +1,5 @@
-#ifndef LIBMCB_SIGNED_DIJKSTRA_HPP_
-#define LIBMCB_SIGNED_DIJKSTRA_HPP_
+#ifndef MCB_SIGNED_DIJKSTRA_HPP_
+#define MCB_SIGNED_DIJKSTRA_HPP_
 
 #include <iostream>
 

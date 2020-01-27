@@ -1,3 +1,0 @@
-#cmakedefine HAVE_BOOST @Boost_FOUND@
-#cmakedefine HAVE_TBB @TBB_FOUND@
-#cmakedefine MCB_VERSION @VERSION@

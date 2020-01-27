@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.10 FATAL_ERROR)
 
-project (mcb)
+project (mcb CXX)
 
 set(VERSION "0.1")
 set(PACKAGE_VERSION "0.1")
@@ -11,7 +11,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-message(STATUS "MCB library version: ${VERSION}")
+message(STATUS "We are on a ${CMAKE_SYSTEM_NAME} system")
+message(STATUS "The host processor is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+message(STATUS "Building MCB library version: ${VERSION}")
 
 ## Add custom path with cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/etc/cmake/")
@@ -20,6 +22,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/etc/cmake/")
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Requires an out-of-source build. Please create a separate build directory and run 'cmake path/to/parmcb [options]' there.")
 endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+
 
 ## additional user-defined library directories
 foreach(library ${CMAKE_EXTRA_LIBRARIES})
@@ -41,17 +44,21 @@ find_package(TBB)
 # MPI
 find_package(MPI COMPONENTS CXX)
 
-#configure_file(include/mcb/config.h.in config.h @ONLY IMMEDIATE)
-
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
-#add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-
 add_subdirectory(include/mcb)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+set(MCB_HAVE_BOOST ${Boost_FOUND})
+set(MCB_HAVE_TBB ${TBB_FOUND})
+set(MCB_HAVE_MPI ${MPI_FOUND})
+
+#add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 add_library(mcb INTERFACE)
 target_include_directories(mcb INTERFACE ${PROJECT_SOURCE_DIR}/include/)
+configure_file(include/mcb/config.hpp.in config.hpp)
+install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/mcb)
 
 add_executable(dimacs src/dimacs.cpp)
 target_include_directories(dimacs PUBLIC ${PROJECT_SOURCE_DIR}/include)
@@ -70,7 +77,6 @@ target_compile_definitions(dimacs_mpi PUBLIC ${TBB_DEFINITIONS})
 target_link_libraries(dimacs_mpi ${TBB_LIBRARIES})
 target_include_directories(dimacs_mpi PUBLIC ${MPI_C_INCLUDE_PATH})
 target_link_libraries(dimacs_mpi MPI::MPI_CXX)
-
 
 enable_testing()
 include(CTest)
@@ -116,4 +122,5 @@ set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
 set(CPACK_GENERATOR "DEB;TGZ")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "DM")
 include(CPack)
+
 

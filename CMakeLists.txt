@@ -107,7 +107,7 @@ target_compile_definitions(test_fvs PUBLIC ${TBB_DEFINITIONS})
 target_link_libraries(test_fvs ${TBB_LIBRARIES})
 add_test(NAME test_fvs COMMAND test_fvs)
 
-install(TARGETS mcb dimacs
+install(TARGETS mcb dimacs dimacs_mpi
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
         )

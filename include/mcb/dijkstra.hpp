@@ -50,7 +50,7 @@ namespace mcb {
         typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
         typedef boost::d_ary_heap_indirect<Vertex, 4,
                 boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&>,
-                DistanceMap, std::less<double>> VertexQueue;
+                DistanceMap, std::less<DistanceType>> VertexQueue;
 
         std::less<DistanceType> compare;
         mcb::detail::closed_plus<DistanceType> combine = mcb::detail::closed_plus<DistanceType>();

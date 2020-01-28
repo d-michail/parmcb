@@ -13,7 +13,7 @@
 #include <boost/serialization/vector.hpp>
 
 #include <mcb/forestindex.hpp>
-#include <mcb/dijkstra.hpp>
+#include <mcb/lex_dijkstra.hpp>
 #include <mcb/spvecgf2.hpp>
 #include <mcb/util.hpp>
 

@@ -48,6 +48,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 add_subdirectory(include/mcb)
+add_subdirectory(include/mcb/detail)
 add_subdirectory(include/mcb/mpi)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 set(MCB_HAVE_BOOST ${Boost_FOUND})

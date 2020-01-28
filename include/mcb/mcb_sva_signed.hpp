@@ -113,13 +113,7 @@ namespace mcb {
                     }
                 }
             }
-            if (!std::get<2>(best)) {
-                std::cout << "Warning best seems to be missing" << std::endl;
-                for(auto x: std::get<0>(best)) {
-                    std::cout << "cycle contains edge " << x << std::endl;
-                }
-            }
-            //assert(std::get<2>(best));
+            assert(std::get<2>(best));
             cycle_timer.stop();
 
             /*

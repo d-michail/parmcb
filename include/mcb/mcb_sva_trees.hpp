@@ -16,7 +16,7 @@
 
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
-#include <mcb/fvs.hpp>
+#include <mcb/detail/fvs.hpp>
 #include <mcb/sptrees.hpp>
 #include <mcb/util.hpp>
 

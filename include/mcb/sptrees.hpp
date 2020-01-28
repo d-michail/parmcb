@@ -27,7 +27,7 @@ namespace mcb {
 
     template<class Graph, class WeightMap> class SPNode;
     template<class Graph, class WeightMap> class SPTree;
-    template<class Graph, class WeightMap> struct SPSubtree;
+    template<class Graph, class WeightMap, class T> struct SPSubtree;
     template<class Graph, class WeightMap, bool ParallelUsingTBB> class SPTrees;
     template<class Graph, class WeightMap> class CandidateCycle;
     template<class Graph> struct SerializableCandidateCycle;
@@ -37,19 +37,20 @@ namespace mcb {
     template<class Graph, class WeightMap>
     class SPNode {
     public:
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
         SPNode() :
-                _parity(false), _weight(WeightType()), _pred(), _has_pred(false) {
+                _vertex(), _parity(false), _weight(WeightType()), _pred(), _has_pred(false) {
         }
 
-        SPNode(WeightType weight) :
-                _parity(false), _weight(WeightType()), _pred(), _has_pred(false) {
+        SPNode(Vertex vertex, WeightType weight) :
+                _vertex(vertex), _parity(false), _weight(WeightType()), _pred(), _has_pred(false) {
         }
 
-        SPNode(WeightType weight, const Edge &pred) :
-                _parity(false), _weight(weight), _pred(pred), _has_pred(true) {
+        SPNode(Vertex vertex, WeightType weight, const Edge &pred) :
+                _vertex(vertex), _parity(false), _weight(weight), _pred(pred), _has_pred(true) {
         }
 
         void add_child(std::shared_ptr<SPNode<Graph, WeightMap>> c) {
@@ -58,6 +59,10 @@ namespace mcb {
 
         std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>>& children() {
             return _children;
+        }
+
+        Vertex& vertex() {
+            return _vertex;
         }
 
         bool& parity() {
@@ -77,6 +82,7 @@ namespace mcb {
         }
 
     private:
+        Vertex _vertex;
         bool _parity;
         WeightType _weight;
         Edge _pred;
@@ -84,13 +90,13 @@ namespace mcb {
         std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>> _children;
     };
 
-    template<class Graph, class WeightMap>
+    template<class Graph, class WeightMap, class T>
     struct SPSubtree {
-        bool parity;
+        T info;
         std::shared_ptr<SPNode<Graph, WeightMap>> root;
 
-        SPSubtree(bool parity, std::shared_ptr<SPNode<Graph, WeightMap>> root) :
-                parity(parity), root(root) {
+        SPSubtree(T info, std::shared_ptr<SPNode<Graph, WeightMap>> root) :
+                info(info), root(root) {
         }
     };
 
@@ -105,22 +111,22 @@ namespace mcb {
 
         SPTree(std::size_t id, const Graph &g, const WeightMap &weight_map, const Vertex &source) :
                 _id(id), _g(g), _weight_map(weight_map), _index_map(boost::get(boost::vertex_index, g)), _source(
-                        source), _tree_node_map(boost::num_vertices(g)) {
+                        source), _tree_node_map(boost::num_vertices(g)), _first_in_path(boost::num_vertices(g)) {
             initialize();
         }
 
         void update_parities(const std::set<Edge> &edges) {
-            std::stack<SPSubtree<Graph, WeightMap>> stack;
+            std::stack<SPSubtree<Graph, WeightMap, bool>> stack;
             stack.emplace(false, _root);
 
             while (!stack.empty()) {
-                SPSubtree<Graph, WeightMap> r = stack.top();
+                SPSubtree<Graph, WeightMap, bool> r = stack.top();
                 stack.pop();
 
-                r.root->parity() = r.parity;
+                r.root->parity() = r.info;
                 for (auto c : r.root->children()) {
                     bool is_signed = edges.find(c->pred()) != edges.end();
-                    stack.emplace(SPSubtree<Graph, WeightMap> { static_cast<bool>(r.parity ^ is_signed), c });
+                    stack.emplace(SPSubtree<Graph, WeightMap, bool> { static_cast<bool>(r.info ^ is_signed), c });
                 }
             }
         }
@@ -173,6 +179,11 @@ namespace mcb {
                     continue;
                 }
 
+                if (_first_in_path[_index_map[v->vertex()]] == _first_in_path[_index_map[u->vertex()]]) {
+                    // shortest paths start with the same vertex, discard
+                    continue;
+                }
+
                 WeightType cycle_weight = boost::get(_weight_map, e) + v->weight() + u->weight();
                 cycles.emplace_back(_id, e, cycle_weight);
             }
@@ -214,6 +225,12 @@ namespace mcb {
                 if (u == nullptr) {
                     continue;
                 }
+
+                if (_first_in_path[_index_map[v->vertex()]] == _first_in_path[_index_map[u->vertex()]]) {
+                    // shortest paths start with the same vertex, discard
+                    continue;
+                }
+
                 cycles.emplace_back(_source, forest_index(e));
             }
 
@@ -224,11 +241,21 @@ namespace mcb {
         const std::size_t _id;
         const Graph &_g;
         const WeightMap &_weight_map;
-        const VertexIndexMapType _index_map;
+        const VertexIndexMapType &_index_map;
         const Vertex _source;
 
-        std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>> _tree_node_map;
+        /*
+         * Shortest path tree root
+         */
         std::shared_ptr<SPNode<Graph, WeightMap>> _root;
+        /*
+         * Map from vertex to shortest path tree node
+         */
+        std::vector<std::shared_ptr<SPNode<Graph, WeightMap>>> _tree_node_map;
+        /*
+         * First vertex in shortest path from root to a vertex.
+         */
+        std::vector<Vertex> _first_in_path;
 
         void initialize() {
             // run shortest path
@@ -249,12 +276,12 @@ namespace mcb {
                 auto p = boost::get(pred_map, v);
                 if (v == _source) {
                     _tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
-                            new SPNode<Graph, WeightMap>(dist[vindex]));
+                            new SPNode<Graph, WeightMap>(v, dist[vindex]));
                     _root = _tree_node_map[vindex];
                 } else if (std::get<0>(p)) {
                     Edge e = std::get<1>(p);
                     _tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
-                            new SPNode<Graph, WeightMap>(dist[vindex], e));
+                            new SPNode<Graph, WeightMap>(v, dist[vindex], e));
                 }
             }
 
@@ -270,7 +297,37 @@ namespace mcb {
                     _tree_node_map[uindex]->add_child(_tree_node_map[vindex]);
                 }
             }
+
+            // compute first in path
+            compute_first_in_path();
         }
+
+        void compute_first_in_path() {
+            std::stack<SPSubtree<Graph, WeightMap, Vertex>> stack;
+            stack.emplace(_source, _root);
+
+            while (!stack.empty()) {
+                SPSubtree<Graph, WeightMap, Vertex> r = stack.top();
+                stack.pop();
+
+                if (r.root == _root) {
+                    auto v = r.root->vertex();
+                    auto vindex = _index_map[v];
+                    _first_in_path[vindex] = v;
+                    for (auto c : r.root->children()) {
+                        stack.emplace(SPSubtree<Graph, WeightMap, Vertex> { static_cast<Vertex>(c->vertex()), c });
+                    }
+                } else {
+                    auto v = r.root->vertex();
+                    auto vindex = _index_map[v];
+                    _first_in_path[vindex] = r.info;
+                    for (auto c : r.root->children()) {
+                        stack.emplace(SPSubtree<Graph, WeightMap, Vertex> { static_cast<Vertex>(r.info), c });
+                    }
+                }
+            }
+        }
+
     };
 
     template<class Graph, class WeightMap>
@@ -443,6 +500,7 @@ namespace mcb {
                         p.second.begin(), p.second.end());
                 cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
             }
+            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
             if (sorted_cycles) {
                 // sort
                 std::cout << "Sorting cycles" << std::endl;
@@ -460,6 +518,7 @@ namespace mcb {
                 std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
                 cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
             }
+            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
             if (sorted_cycles) {
                 // sort
                 std::cout << "Sorting cycles" << std::endl;

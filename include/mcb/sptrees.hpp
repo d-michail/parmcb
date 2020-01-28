@@ -148,8 +148,13 @@ namespace mcb {
             return _id;
         }
 
+        const Vertex first(const Vertex &v) {
+            auto vindex = _index_map[v];
+            return _first_in_path[vindex];
+        }
+
         template<class EdgeIterator>
-        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles(EdgeIterator begin, EdgeIterator end) {
+        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles(EdgeIterator begin, EdgeIterator end) const {
             // collect tree edges
             std::set<Edge> tree_edges;
             VertexIt vi, viend;
@@ -191,7 +196,7 @@ namespace mcb {
             return cycles;
         }
 
-        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles() {
+        std::vector<CandidateCycle<Graph, WeightMap>> create_candidate_cycles() const {
             auto itPair = boost::edges(_g);
             return create_candidate_cycles(itPair.first, itPair.second);
         }

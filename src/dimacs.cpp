@@ -13,6 +13,7 @@
 
 #include <mcb/mcb.hpp>
 #include <mcb/util.hpp>
+#include <mcb/isocycles.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -84,6 +85,9 @@ int main(int argc, char *argv[]) {
     }
 
     boost::timer::cpu_timer timer;
+
+    // TODO: remove me
+    mcb::build_iso_cycles(graph, get(boost::edge_weight, graph));
 
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;

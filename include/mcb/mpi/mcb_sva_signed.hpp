@@ -21,10 +21,10 @@
 #include <tbb/tbb.h>
 #include <tbb/concurrent_vector.h>
 
+#include <mcb/detail/signed_dijkstra.hpp>
 #include <mcb/mpi/sptrees.hpp>
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
-#include <mcb/signed_dijkstra.hpp>
 #include <mcb/util.hpp>
 
 namespace mcb {

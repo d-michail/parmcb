@@ -14,9 +14,10 @@
 #include <set>
 #include <vector>
 
+#include <mcb/detail/signed_dijkstra.hpp>
+
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
-#include <mcb/signed_dijkstra.hpp>
 #include <mcb/util.hpp>
 
 namespace mcb {

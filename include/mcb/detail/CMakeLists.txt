@@ -1,1 +1,1 @@
-install(FILES fvs.hpp DESTINATION include/mcb/detail)
+install(FILES fvs.hpp dijkstra.hpp lex_dijkstra.hpp signed_dijkstra.hpp DESTINATION include/mcb/detail)

@@ -86,15 +86,18 @@ int main(int argc, char *argv[]) {
 
     boost::timer::cpu_timer timer;
 
-    // TODO: remove me
-    mcb::build_iso_cycles(graph, get(boost::edge_weight, graph));
+    std::vector<mcb::SPTree<graph_t, boost::property_map<graph_t, boost::edge_weight_t>::type>> trees;
+    std::vector<mcb::CandidateCycle<graph_t, boost::property_map<graph_t, boost::edge_weight_t>::type>> isocycles;
+    mcb::build_iso_cycles(graph, get(boost::edge_weight, graph), trees, isocycles);
+    std::cout << "Total iso cycles: " << isocycles.size() << std::endl;
 
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
     if (vm["signed"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), cores);
+            mcb_weight = mcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+                    cores);
         } else {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
             mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));

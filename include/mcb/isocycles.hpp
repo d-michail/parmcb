@@ -27,10 +27,9 @@ namespace boost {
 namespace mcb {
 
     template<class Graph, class WeightMap>
-    void build_iso_cycles(const Graph &g, const WeightMap &weight_map) {
-        // TODO: make these parameters
-        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
-        std::vector<CandidateCycle<Graph, WeightMap>> isocycles;
+    void build_iso_cycles(const Graph &g, const WeightMap &weight_map,
+            std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+            std::vector<CandidateCycle<Graph, WeightMap>> &isocycles) {
 
         typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
         typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
@@ -171,8 +170,6 @@ namespace mcb {
                 is_in_output[component] = true;
             }
         }
-
-        std::cout << "Iso cycles: " << isocycles.size() << std::endl;
     }
 
 } // mcb

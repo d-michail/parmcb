@@ -3,8 +3,10 @@
 
 #include <iostream>
 #include <map>
-
+#include <mcb/util.hpp>
 #include <mcb/sptrees.hpp>
+
+#include <boost/graph/connected_components.hpp>
 
 namespace boost {
 
@@ -26,17 +28,20 @@ namespace mcb {
 
     template<class Graph, class WeightMap>
     void build_iso_cycles(const Graph &g, const WeightMap &weight_map) {
+        // TODO: make these parameters
+        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<CandidateCycle<Graph, WeightMap>> isocycles;
 
         typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
         typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+        typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
         const VertexIndexMapType &index_map = boost::get(boost::vertex_index, g);
 
         /*
          * Build all shortest path trees
          */
-        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
         std::vector<std::size_t> trees_index_map(boost::num_vertices(g));
         VertexIt ui, uiend;
         for (boost::tie(ui, uiend) = boost::vertices(g); ui != uiend; ++ui) {
@@ -48,7 +53,7 @@ namespace mcb {
         }
 
         /*
-         * Build all Horton's candidate cycles
+         * Build all of Horton's candidate cycles
          */
         std::vector<CandidateCycle<Graph, WeightMap>> cycles;
         for (const auto &tree : trees) {
@@ -94,29 +99,29 @@ namespace mcb {
             auto first_x_v = tree_x.first(v);
 
             if (first_x_u == first_x_v) {
-                std::cerr << "Not a circuit!" << std::endl;
                 continue;
             }
 
             if (x == u) {
-                boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]],e)], cycles_g);
+                boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]], e)], cycles_g);
                 //std::cout << "TODO: 1 (v,e)" << std::endl;
             } else {
                 auto xprime = tree_x.first(u);
-                auto xprime_index = index_map[xprime];
-                mcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[xprime_index]];
+                mcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
 
                 auto first_xprime_v = tree_xprime.first(v);
 
                 if (x == first_xprime_v) {
-                    boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[xprime]],e)], cycles_g);
+                    boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[xprime]], e)],
+                            cycles_g);
                     //std::cout << "TODO: 2a is (x',e)" << std::endl;
                 } else {
-                    auto vindex = index_map[v];
-                    mcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[vindex]];
+                    mcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[index_map[v]]];
                     auto first_v_xprime = tree_v.first(xprime);
                     if (u == first_v_xprime) {
-                        boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]],tree_x.node(xprime)->pred())], cycles_g);
+                        boost::add_edge(*alli,
+                                cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]],
+                                        tree_x.node(xprime)->pred())], cycles_g);
                         //std::cout << "TODO: 2b (v,xx')" << std::endl;
                     } else {
                         boost::put(bad_map, *alli, true);
@@ -124,15 +129,50 @@ namespace mcb {
                     }
                 }
             }
-
         }
 
-        // compute connected components
-        // if one has a bad vertex, then skip
-        // otherwise for each component, keep only one
+        /*
+         * Find components
+         */
+        std::vector<std::size_t> components(boost::num_vertices(cycles_g));
+        boost::function_property_map<mcb::detail::VertexIndexFunctor<graph_t, std::size_t>, vertex_descriptor,
+                std::size_t&> components_map(
+                mcb::detail::VertexIndexFunctor<graph_t, std::size_t>(components,
+                        boost::get(boost::vertex_index, cycles_g)));
+        std::size_t num_components = boost::connected_components(cycles_g, components_map);
 
-        // TODO
+        std::vector<bool> is_bad_component(num_components, false);
+        for (boost::tie(alli, alliend) = boost::vertices(cycles_g); alli != alliend; ++alli) {
+            auto v = *alli;
+            std::size_t component = boost::get(components_map, v);
+            is_bad_component[component] = is_bad_component[component] || boost::get(bad_map, v);
+        }
 
+        std::vector<bool> is_in_output(num_components, false);
+        for (boost::tie(alli, alliend) = boost::vertices(cycles_g); alli != alliend; ++alli) {
+            auto v = *alli;
+            std::size_t component = boost::get(components_map, v);
+            if (!is_bad_component[component] && !is_in_output[component]) {
+                auto tree = boost::get(tree_map, v);
+                auto e = boost::get(edge_map, v);
+                mcb::SPTree<Graph, WeightMap> &tree_v = trees[tree];
+
+                std::shared_ptr<SPNode<Graph, WeightMap>> spnode_v = tree_v.node(boost::source(e, g));
+                if (spnode_v == nullptr) {
+                    continue;
+                }
+                std::shared_ptr<SPNode<Graph, WeightMap>> spnode_u = tree_v.node(boost::target(e, g));
+                if (spnode_u == nullptr) {
+                    continue;
+                }
+
+                WeightType cycle_weight = boost::get(weight_map, e) + spnode_v->weight() + spnode_u->weight();
+                isocycles.emplace_back(tree, e, cycle_weight);
+                is_in_output[component] = true;
+            }
+        }
+
+        std::cout << "Iso cycles: " << isocycles.size() << std::endl;
     }
 
 } // mcb

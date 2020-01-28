@@ -267,7 +267,7 @@ namespace mcb {
             boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge>>, Vertex,
                     std::tuple<bool, Edge>&> pred_map(
                     mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, _index_map));
-            dijkstra(_g, _weight_map, _source, dist_map, pred_map);
+            lex_dijkstra(_g, _weight_map, _source, dist_map, pred_map);
 
             // create tree nodes and mapping
             VertexIt vi, viend;
@@ -455,167 +455,26 @@ namespace mcb {
 
     };
 
-    template<class Graph, class WeightMap, bool ParallelUsingTBB>
-    class SPTrees {
+    template<class Graph, class WeightMap>
+    class CandidateCycleBuilder {
     public:
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        SPTrees(const Graph &g, const WeightMap &weight_map, const std::vector<Vertex> &fvs, bool sorted_cycles) :
-                g(g), weight_map(weight_map), sorted_cycles(sorted_cycles) {
-            build_trees(fvs);
+        CandidateCycleBuilder(const Graph &g, const WeightMap &weight_map) :
+                g(g), weight_map(weight_map) {
         }
 
-        SPTrees(const Graph &g, const WeightMap &weight_map, const std::map<Vertex, std::vector<Edge>> &fvs,
-                bool sorted_cycles) :
-                g(g), weight_map(weight_map), sorted_cycles(sorted_cycles) {
-            build_trees(fvs);
-        }
-
-        std::tuple<std::set<Edge>, WeightType, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
-            return _compute_shortest_odd_cycle(edges);
-        }
-
-        std::size_t get_number_of_trees() {
-            return trees.size();
-        }
-
-        mcb::SPTree<Graph, WeightMap>& get_tree(std::size_t n) {
-            return trees.at(n);
-        }
-
-    private:
-        const Graph &g;
-        const WeightMap &weight_map;
-
-        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
-        std::vector<CandidateCycle<Graph, WeightMap>> cycles;
-        bool sorted_cycles;
-
-        void build_trees(const std::map<Vertex, std::vector<Edge>> &fvs) {
-            for (auto const &p : fvs) {
-                SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
-                trees.push_back(tree);
-                std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(
-                        p.second.begin(), p.second.end());
-                cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
-            }
-            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
-            if (sorted_cycles) {
-                // sort
-                std::cout << "Sorting cycles" << std::endl;
-                std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
-                    return a.weight() < b.weight();
-                });
-            }
-        }
-
-        void build_trees(const std::vector<Vertex> &fvs) {
-            for (auto v : fvs) {
-                trees.emplace_back(trees.size(), g, weight_map, v);
-            }
-            for (auto &tree : trees) {
-                std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
-                cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
-            }
-            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
-            if (sorted_cycles) {
-                // sort
-                std::cout << "Sorting cycles" << std::endl;
-                std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
-                    return a.weight() < b.weight();
-                });
-            }
-        }
-
-        template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
-                typename std::enable_if<!is_tbb_enabled>::type* = 0) {
-
-            for (auto &tree : trees) {
-                tree.update_parities(edges);
-            }
-
-            std::tuple<std::set<Edge>, WeightType, bool> min;
-
-            for (CandidateCycle<Graph, WeightMap> c : cycles) {
-                std::tuple<std::set<Edge>, WeightType, bool> cc = check_and_construct_candidate_cycle(c, edges,
-                        std::get<2>(min), std::get<1>(min));
-
-                if (std::get<2>(cc)) {
-                    if (sorted_cycles) {
-                        return cc;
-                    }
-
-                    if (!std::get<2>(min)) {
-                        min = cc;
-                    } else {
-                        if (std::get<1>(cc) < std::get<1>(min)) {
-                            min = cc;
-                        }
-                    }
-                }
-            }
-            return min;
-        }
-
-        template<bool is_tbb_enabled = ParallelUsingTBB>
-        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
-                typename std::enable_if<is_tbb_enabled>::type* = 0) {
-
-            tbb::parallel_for(tbb::blocked_range<std::size_t>(0, trees.size()),
-                    [&](const tbb::blocked_range<std::size_t> &r) {
-                        for (std::size_t i = r.begin(); i != r.end(); ++i) {
-                            trees[i].update_parities(edges);
-                        }
-                    });
-
-            std::less<WeightType> compare = std::less<WeightType>();
-            typedef std::tuple<std::set<Edge>, WeightType, bool> cycle_t;
-            auto cycle_min = [compare](const cycle_t &c1, const cycle_t &c2) {
-                if (!std::get<2>(c1) || !std::get<2>(c2)) {
-                    if (std::get<2>(c1)) {
-                        return c1;
-                    } else {
-                        return c2;
-                    }
-                }
-                // both valid, compare
-                if (!compare(std::get<1>(c2), std::get<1>(c1))) {
-                    return c1;
-                }
-                return c2;
-            };
-
-            return tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, cycles.size()),
-                    std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
-                    [&](tbb::blocked_range<std::size_t> r, auto running_min) {
-                        for (std::size_t i = r.begin(); i < r.end(); i++) {
-                            auto c = cycles[i];
-                            auto cc = check_and_construct_candidate_cycle(c, edges, std::get<2>(running_min),
-                                    std::get<1>(running_min));
-                            if (std::get<2>(cc)) {
-                                if (!std::get<2>(running_min) || compare(std::get<1>(cc), std::get<1>(running_min))) {
-                                    running_min = cc;
-                                }
-                            }
-                        }
-                        return running_min;
-                    },
-                    cycle_min);
-        }
-
-        std::tuple<std::set<Edge>, WeightType, bool> check_and_construct_candidate_cycle(
-                CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &edges, bool use_weight_limit,
-                WeightType weight_limit) {
-            //std::cout << "Checking candidate cycle from source: " << trees[c.tree()].source() << " with edge " << c.edge() << std::endl;
+        std::tuple<std::set<Edge>, WeightType, bool> operator()(const std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+                const CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &signed_edges, bool use_weight_limit,
+                WeightType weight_limit) const {
 
             std::shared_ptr<SPNode<Graph, WeightMap>> v = trees[c.tree()].node(boost::source(c.edge(), g));
             std::shared_ptr<SPNode<Graph, WeightMap>> u = trees[c.tree()].node(boost::target(c.edge(), g));
 
             Edge e = c.edge();
-            if (v->parity() ^ u->parity() ^ (edges.find(e) != edges.end())) {
+            if (v->parity() ^ u->parity() ^ (signed_edges.find(e) != signed_edges.end())) {
                 // odd cycle, validate
                 bool valid = true;
                 WeightType cycle_weight = boost::get(weight_map, e);
@@ -673,6 +532,163 @@ namespace mcb {
                 return std::make_tuple(result, cycle_weight, true);
             }
             return std::make_tuple(std::set<Edge> { }, 0.0, false);
+        }
+
+    private:
+        const Graph &g;
+        const WeightMap &weight_map;
+    };
+
+    template<class Graph, class WeightMap, bool ParallelUsingTBB>
+    class SPTrees {
+    public:
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+        typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+        typedef typename boost::property_traits<WeightMap>::value_type WeightType;
+
+        SPTrees(const Graph &g, const WeightMap &weight_map, const std::vector<Vertex> &fvs, bool sorted_cycles) :
+                g(g), weight_map(weight_map), candidate_cycle_builder(g, weight_map), sorted_cycles(sorted_cycles) {
+            build_trees(fvs);
+        }
+
+        SPTrees(const Graph &g, const WeightMap &weight_map, const std::map<Vertex, std::vector<Edge>> &fvs,
+                bool sorted_cycles) :
+                g(g), weight_map(weight_map), candidate_cycle_builder(g, weight_map), sorted_cycles(sorted_cycles) {
+            build_trees(fvs);
+        }
+
+        std::tuple<std::set<Edge>, WeightType, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges) {
+            return _compute_shortest_odd_cycle(edges);
+        }
+
+        std::size_t get_number_of_trees() {
+            return trees.size();
+        }
+
+        mcb::SPTree<Graph, WeightMap>& get_tree(std::size_t n) {
+            return trees.at(n);
+        }
+
+    private:
+        const Graph &g;
+        const WeightMap &weight_map;
+        const CandidateCycleBuilder<Graph, WeightMap> candidate_cycle_builder;
+
+        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<CandidateCycle<Graph, WeightMap>> cycles;
+        bool sorted_cycles;
+
+        void build_trees(const std::map<Vertex, std::vector<Edge>> &fvs) {
+            for (auto const &p : fvs) {
+                SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
+                trees.push_back(tree);
+                std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(
+                        p.second.begin(), p.second.end());
+                cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+            }
+            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+            if (sorted_cycles) {
+                // sort
+                std::cout << "Sorting cycles" << std::endl;
+                std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                    return a.weight() < b.weight();
+                });
+            }
+        }
+
+        void build_trees(const std::vector<Vertex> &fvs) {
+            for (auto v : fvs) {
+                trees.emplace_back(trees.size(), g, weight_map, v);
+            }
+            for (auto &tree : trees) {
+                std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+            }
+            std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+            if (sorted_cycles) {
+                // sort
+                std::cout << "Sorting cycles" << std::endl;
+                std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                    return a.weight() < b.weight();
+                });
+            }
+        }
+
+        template<bool is_tbb_enabled = ParallelUsingTBB>
+        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+                typename std::enable_if<!is_tbb_enabled>::type* = 0) {
+
+            for (auto &tree : trees) {
+                tree.update_parities(edges);
+            }
+
+            std::tuple<std::set<Edge>, WeightType, bool> min;
+
+            for (CandidateCycle<Graph, WeightMap> c : cycles) {
+                std::tuple<std::set<Edge>, WeightType, bool> cc = candidate_cycle_builder(trees, c, edges,
+                        std::get<2>(min), std::get<1>(min));
+
+                if (std::get<2>(cc)) {
+                    if (sorted_cycles) {
+                        return cc;
+                    }
+
+                    if (!std::get<2>(min)) {
+                        min = cc;
+                    } else {
+                        if (std::get<1>(cc) < std::get<1>(min)) {
+                            min = cc;
+                        }
+                    }
+                }
+            }
+            return min;
+        }
+
+        template<bool is_tbb_enabled = ParallelUsingTBB>
+        std::tuple<std::set<Edge>, WeightType, bool> _compute_shortest_odd_cycle(const std::set<Edge> &edges,
+                typename std::enable_if<is_tbb_enabled>::type* = 0) {
+
+            tbb::parallel_for(tbb::blocked_range<std::size_t>(0, trees.size()),
+                    [&](const tbb::blocked_range<std::size_t> &r) {
+                        for (std::size_t i = r.begin(); i != r.end(); ++i) {
+                            trees[i].update_parities(edges);
+                        }
+                    });
+
+            std::less<WeightType> compare = std::less<WeightType>();
+            typedef std::tuple<std::set<Edge>, WeightType, bool> cycle_t;
+            auto cycle_min = [compare](const cycle_t &c1, const cycle_t &c2) {
+                if (!std::get<2>(c1) || !std::get<2>(c2)) {
+                    if (std::get<2>(c1)) {
+                        return c1;
+                    } else {
+                        return c2;
+                    }
+                }
+                // both valid, compare
+                if (!compare(std::get<1>(c2), std::get<1>(c1))) {
+                    return c1;
+                }
+                return c2;
+            };
+
+            return tbb::parallel_reduce(tbb::blocked_range<std::size_t>(0, cycles.size()),
+                    std::make_tuple(std::set<Edge>(), (std::numeric_limits<WeightType>::max)(), false),
+                    [&](tbb::blocked_range<std::size_t> r, auto running_min) {
+                        for (std::size_t i = r.begin(); i < r.end(); i++) {
+                            auto c = cycles[i];
+                            auto cc = candidate_cycle_builder(trees, c, edges, std::get<2>(running_min),
+                                    std::get<1>(running_min));
+                            if (std::get<2>(cc)) {
+                                if (!std::get<2>(running_min) || compare(std::get<1>(cc), std::get<1>(running_min))) {
+                                    running_min = cc;
+                                }
+                            }
+                        }
+                        return running_min;
+                    },
+                    cycle_min);
         }
 
     };

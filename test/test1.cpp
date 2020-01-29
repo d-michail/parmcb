@@ -197,3 +197,67 @@ TEST_CASE("parallel sva trees"){
     CHECK(mcb_weight == 124.0);
 
 }
+
+TEST_CASE("sequential sva iso trees"){
+
+    Graph graph;
+    create_graph(graph);
+    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
+
+    CHECK(num_vertices(graph) == 17);
+    CHECK(num_edges(graph) == 17);
+
+    //
+    //   0 -- 1 -- 2 -- 7 -- 9
+    //   |         |         |
+    //   5 -- 4 -- 3 -- 8 -- 10
+    //   |
+    //   6    11 -- 12 -- 13
+    //              |      |
+    //  16          15 --  14
+    //
+
+    std::list<std::list<Edge>> cycles;
+    double mcb_weight = mcb::mcb_sva_iso_trees(graph, weight, std::back_inserter(cycles));
+
+    for (auto it = cycles.begin(); it != cycles.end(); it++) {
+        auto cycle = *it;
+        CHECK(mcb::is_cycle(graph, cycle));
+    }
+
+    CHECK(cycles.size() == 3);
+    CHECK(mcb_weight == 124.0);
+
+}
+
+TEST_CASE("parallel sva iso trees"){
+
+    Graph graph;
+    create_graph(graph);
+    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
+
+    CHECK(num_vertices(graph) == 17);
+    CHECK(num_edges(graph) == 17);
+
+    //
+    //   0 -- 1 -- 2 -- 7 -- 9
+    //   |         |         |
+    //   5 -- 4 -- 3 -- 8 -- 10
+    //   |
+    //   6    11 -- 12 -- 13
+    //              |      |
+    //  16          15 --  14
+    //
+
+    std::list<std::list<Edge>> cycles;
+    double mcb_weight = mcb::mcb_sva_iso_trees_tbb(graph, weight, std::back_inserter(cycles));
+
+    for (auto it = cycles.begin(); it != cycles.end(); it++) {
+        auto cycle = *it;
+        CHECK(mcb::is_cycle(graph, cycle));
+    }
+
+    CHECK(cycles.size() == 3);
+    CHECK(mcb_weight == 124.0);
+
+}

@@ -43,12 +43,13 @@ namespace mcb {
          */
         std::vector<std::size_t> trees_index_map(boost::num_vertices(g));
         VertexIt ui, uiend;
+        std::size_t next_tree = 0;
         for (boost::tie(ui, uiend) = boost::vertices(g); ui != uiend; ++ui) {
             auto u = *ui;
             auto uindex = index_map[u];
-            std::size_t location = trees.size();
-            trees.emplace_back(location, g, weight_map, u);
-            trees_index_map[uindex] = location;
+            trees.emplace_back(next_tree, g, weight_map, u);
+            trees_index_map[uindex] = next_tree;
+            next_tree++;
         }
 
         /*

@@ -86,11 +86,6 @@ int main(int argc, char *argv[]) {
 
     boost::timer::cpu_timer timer;
 
-    std::vector<mcb::SPTree<graph_t, boost::property_map<graph_t, boost::edge_weight_t>::type>> trees;
-    std::vector<mcb::CandidateCycle<graph_t, boost::property_map<graph_t, boost::edge_weight_t>::type>> isocycles;
-    mcb::build_iso_cycles(graph, get(boost::edge_weight, graph), trees, isocycles);
-    std::cout << "Total iso cycles: " << isocycles.size() << std::endl;
-
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
     if (vm["signed"].as<bool>()) {
@@ -108,7 +103,8 @@ int main(int argc, char *argv[]) {
             mcb_weight = mcb::mcb_sva_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
             std::cout << "Using MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            //mcb_weight = mcb::mcb_sva_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = mcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     }
 

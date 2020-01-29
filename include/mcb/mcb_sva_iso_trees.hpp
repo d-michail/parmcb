@@ -23,8 +23,8 @@
 
 namespace mcb {
 
-    template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees(const Graph &g, WeightMap weight_map,
+    template<class Graph, class WeightMap, class CycleOutputIterator, bool ParallelUsingTBB>
+    typename boost::property_traits<WeightMap>::value_type _mcb_sva_iso_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
 
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
@@ -57,11 +57,19 @@ namespace mcb {
          */
         trees_timer.resume();
         std::vector<mcb::SPTree<Graph, WeightMap>> trees;
-        std::vector<mcb::CandidateCycle<Graph, WeightMap>> isocycles;
-        mcb::build_iso_cycles(g, weight_map, trees, isocycles);
-        std::cout << "Total iso cycles: " << isocycles.size() << std::endl;
-        // TODO: check parallel and sort
-        ShortestOddCycleLookup<Graph, WeightMap, false> cycle_lookup(g, weight_map, trees, isocycles, false);
+        std::vector<mcb::CandidateCycle<Graph, WeightMap>> cycles;
+        mcb::build_iso_cycles(g, weight_map, trees, cycles);
+        std::cout << "Total iso cycles: " << cycles.size() << std::endl;
+        const bool sorted_cycles = true;
+        if (sorted_cycles) {
+            // sort
+            std::cout << "Sorting cycles" << std::endl;
+            std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                return a.weight() < b.weight();
+            });
+        }
+        ShortestOddCycleLookup<Graph, WeightMap, ParallelUsingTBB> cycle_lookup(g, weight_map, trees, cycles,
+                sorted_cycles);
         trees_timer.stop();
 
         /*
@@ -76,12 +84,10 @@ namespace mcb {
             /*
              * Compute shortest odd cycle
              */
-            std::tuple<std::set<Edge>, WeightType, bool> best;
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
-
             cycle_timer.resume();
-            best = cycle_lookup(signed_edges);
+            std::tuple<std::set<Edge>, WeightType, bool> best = cycle_lookup(signed_edges);
             cycle_timer.stop();
 
             /*
@@ -111,6 +117,18 @@ namespace mcb {
         std::cout << "support timer" << support_timer.format();
 
         return mcb_weight;
+    }
+
+    template<class Graph, class WeightMap, class CycleOutputIterator>
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees(const Graph &g, WeightMap weight_map,
+            CycleOutputIterator out) {
+        return _mcb_sva_iso_trees<Graph, WeightMap, CycleOutputIterator, false>(g, weight_map, out);
+    }
+
+    template<class Graph, class WeightMap, class CycleOutputIterator>
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees_tbb(const Graph &g, WeightMap weight_map,
+            CycleOutputIterator out) {
+        return _mcb_sva_iso_trees<Graph, WeightMap, CycleOutputIterator, true>(g, weight_map, out);
     }
 
 } // namespace mcb

@@ -113,8 +113,26 @@ namespace mcb {
         /*
          * Build trees for local candidate cycles
          */
-        const bool sorted_cycles = false;
-        SPTrees<Graph, WeightMap, true> sp_trees(g, weight_map, perVertexCandidates, sorted_cycles);
+        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<mcb::CandidateCycle<Graph, WeightMap>> cycles;
+        for (auto const &p : perVertexCandidates) {
+            SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
+            trees.push_back(tree);
+            std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(p.second.begin(),
+                    p.second.end());
+            cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+        }
+        std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+        const bool sorted_cycles = true;
+        if (sorted_cycles) {
+            // sort
+            std::cout << "Sorting cycles" << std::endl;
+            std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                return a.weight() < b.weight();
+            });
+        }
+        ShortestOddCycleLookup<Graph, WeightMap, true> cycle_lookup(g, weight_map, trees, cycles,
+                        sorted_cycles);
 
         /*
          * Main loop
@@ -139,8 +157,7 @@ namespace mcb {
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
 
-            std::tuple<std::set<Edge>, WeightType, bool> best_local_cycle = sp_trees.compute_shortest_odd_cycle(
-                    signed_edges);
+            std::tuple<std::set<Edge>, WeightType, bool> best_local_cycle = cycle_lookup(signed_edges);
 
             std::vector<typename ForestIndex<Graph>::size_type> best_local_cycle_as_indices;
             convert_edges(std::get<0>(best_local_cycle),

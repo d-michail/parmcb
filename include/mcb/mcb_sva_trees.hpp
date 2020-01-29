@@ -56,10 +56,28 @@ namespace mcb {
          * Initialize all shortest path trees
          */
         trees_timer.resume();
+        std::vector<mcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<mcb::CandidateCycle<Graph, WeightMap>> cycles;
         std::vector<Vertex> feedback_vertex_set;
         mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
+        for (auto v : feedback_vertex_set) {
+            trees.emplace_back(trees.size(), g, weight_map, v);
+        }
+        for (auto &tree : trees) {
+            std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+            cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+        }
+        std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
         const bool sorted_cycles = true;
-        SPTrees<Graph, WeightMap, ParallelUsingTBB> sp_trees(g, weight_map, feedback_vertex_set, sorted_cycles);
+        if (sorted_cycles) {
+            // sort
+            std::cout << "Sorting cycles" << std::endl;
+            std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
+                return a.weight() < b.weight();
+            });
+        }
+        ShortestOddCycleLookup<Graph, WeightMap, ParallelUsingTBB> cycle_lookup(g, weight_map, trees, cycles,
+                sorted_cycles);
         trees_timer.stop();
 
         /*
@@ -74,14 +92,10 @@ namespace mcb {
             /*
              * Compute shortest odd cycle
              */
-            std::set<Edge> best_cycle;
-            WeightType best_cycle_weight;
-            bool best_cycle_set;
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
-
             cycle_timer.resume();
-            std::tie(best_cycle, best_cycle_weight, best_cycle_set) = sp_trees.compute_shortest_odd_cycle(signed_edges);
+            std::tuple<std::set<Edge>, WeightType, bool> best = cycle_lookup(signed_edges);
             cycle_timer.stop();
 
             /*
@@ -89,7 +103,7 @@ namespace mcb {
              */
             support_timer.resume();
             std::set<std::size_t> cyclek;
-            convert_edges(best_cycle, std::inserter(cyclek, cyclek.end()), forest_index);
+            convert_edges(std::get<0>(best), std::inserter(cyclek, cyclek.end()), forest_index);
             for (std::size_t l = k + 1; l < csd; l++) {
                 if (support[l] * cyclek == 1) {
                     support[l] += support[k];
@@ -101,9 +115,9 @@ namespace mcb {
              * Output new cycle
              */
             std::list<Edge> cyclek_edgelist;
-            std::copy(best_cycle.begin(), best_cycle.end(), std::back_inserter(cyclek_edgelist));
+            std::copy(std::get<0>(best).begin(), std::get<0>(best).end(), std::back_inserter(cyclek_edgelist));
             *out++ = cyclek_edgelist;
-            mcb_weight += best_cycle_weight;
+            mcb_weight += std::get<1>(best);
         }
 
         std::cout << "trees   timer" << trees_timer.format();

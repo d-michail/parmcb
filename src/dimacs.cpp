@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
                 ("help,h", "Help")
                 ("verbose,v", po::value<bool>()->default_value(false)->implicit_value(true), "Verbose")
                 ("signed", po::value<bool>()->default_value(true), "Use the signed graph algorithm")
-                ("trees", po::value<bool>()->default_value(false), "Use cycles collection from feedback vertex set trees")
+                ("fvstrees", po::value<bool>()->default_value(false), "Use cycles collection from feedback vertex set trees")
                 ("isotrees", po::value<bool>()->default_value(false), "Use isometric cycles collection")
                 ("parallel,p", po::value<bool>()->default_value(true), "Use parallelization")
                 ("printcycles", po::value<bool>()->default_value(false)->implicit_value(true), "Print cycles")
@@ -98,20 +98,20 @@ int main(int argc, char *argv[]) {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
             mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
-    } else if (vm["trees"].as<bool>()) {
+    } else if (vm["fvstrees"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
-            std::cout << "Using PAR_MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
+            mcb_weight = mcb::mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
-            std::cout << "Using MCB_SVA_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            std::cout << "Using MCB_SVA_FVS_TREES" << std::endl;
+            mcb_weight = mcb::mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     } else {
         if (vm["parallel"].as<bool>()) {
-            std::cout << "Using PAR_MCB_SVA_ISOTREES" << std::endl;
+            std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
             mcb_weight = mcb::mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
-            std::cout << "Using MCB_SVA_ISOTREES" << std::endl;
+            std::cout << "Using MCB_SVA_ISO_TREES" << std::endl;
             mcb_weight = mcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     }

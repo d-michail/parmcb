@@ -16,13 +16,13 @@
 
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
-#include <mcb/detail/fvs.hpp>
-#include <mcb/sptrees.hpp>
 #include <mcb/util.hpp>
+#include <mcb/sptrees.hpp>
+#include <mcb/detail/cycles.hpp>
 
 namespace mcb {
 
-    template<class Graph, class WeightMap, class CycleOutputIterator, bool ParallelUsingTBB>
+    template<class Graph, class WeightMap, class CycleOutputIterator, class CyclesBuilder, bool ParallelUsingTBB>
     typename boost::property_traits<WeightMap>::value_type _mcb_sva_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
 
@@ -58,15 +58,8 @@ namespace mcb {
         trees_timer.resume();
         std::vector<mcb::SPTree<Graph, WeightMap>> trees;
         std::vector<mcb::CandidateCycle<Graph, WeightMap>> cycles;
-        std::vector<Vertex> feedback_vertex_set;
-        mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
-        for (auto v : feedback_vertex_set) {
-            trees.emplace_back(trees.size(), g, weight_map, v);
-        }
-        for (auto &tree : trees) {
-            std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
-            cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
-        }
+        CyclesBuilder cycles_builder;
+        cycles_builder(g, weight_map, trees, cycles);
         std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
         const bool sorted_cycles = true;
         if (sorted_cycles) {
@@ -128,15 +121,31 @@ namespace mcb {
     }
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_trees(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
-        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, false>(g, weight_map, out);
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, mcb::detail::FVSCyclesBuilder<Graph, WeightMap>,
+                false>(g, weight_map, out);
     }
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_trees_tbb(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees_tbb(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
-        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, true>(g, weight_map, out);
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, mcb::detail::FVSCyclesBuilder<Graph, WeightMap>,
+                true>(g, weight_map, out);
+    }
+
+    template<class Graph, class WeightMap, class CycleOutputIterator>
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees(const Graph &g, WeightMap weight_map,
+            CycleOutputIterator out) {
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, mcb::detail::ISOCyclesBuilder<Graph, WeightMap>,
+                false>(g, weight_map, out);
+    }
+
+    template<class Graph, class WeightMap, class CycleOutputIterator>
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees_tbb(const Graph &g, WeightMap weight_map,
+            CycleOutputIterator out) {
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, mcb::detail::ISOCyclesBuilder<Graph, WeightMap>,
+                true>(g, weight_map, out);
     }
 
 } // namespace mcb

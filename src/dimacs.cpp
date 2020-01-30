@@ -13,7 +13,6 @@
 
 #include <mcb/mcb.hpp>
 #include <mcb/util.hpp>
-#include <mcb/isocycles.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;

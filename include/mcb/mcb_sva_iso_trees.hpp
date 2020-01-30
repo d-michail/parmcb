@@ -17,8 +17,8 @@
 #include <mcb/forestindex.hpp>
 #include <mcb/spvecgf2.hpp>
 #include <mcb/detail/fvs.hpp>
+#include <mcb/detail/iso_cycles.hpp>
 #include <mcb/sptrees.hpp>
-#include <mcb/isocycles.hpp>
 #include <mcb/util.hpp>
 
 namespace mcb {
@@ -58,7 +58,7 @@ namespace mcb {
         trees_timer.resume();
         std::vector<mcb::SPTree<Graph, WeightMap>> trees;
         std::vector<mcb::CandidateCycle<Graph, WeightMap>> cycles;
-        mcb::build_iso_cycles(g, weight_map, trees, cycles);
+        mcb::detail::build_iso_cycles(g, weight_map, trees, cycles);
         std::cout << "Total iso cycles: " << cycles.size() << std::endl;
         const bool sorted_cycles = true;
         if (sorted_cycles) {

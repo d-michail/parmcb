@@ -462,6 +462,23 @@ namespace mcb {
     };
 
     template<class Graph, class WeightMap>
+    class CandidateCycleToSerializableConverter {
+    public:
+        CandidateCycleToSerializableConverter(const std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+                const ForestIndex<Graph> &forest_index) :
+                trees(trees), forest_index(forest_index) {
+        }
+
+        SerializableCandidateCycle<Graph> operator()(const CandidateCycle<Graph, WeightMap> &cycle) {
+            return SerializableCandidateCycle<Graph>(trees[cycle.tree()].source(), forest_index(cycle.edge()));
+        }
+
+    private:
+        const std::vector<mcb::SPTree<Graph, WeightMap>> &trees;
+        const ForestIndex<Graph> &forest_index;
+    };
+
+    template<class Graph, class WeightMap>
     class CandidateCycleBuilder {
     public:
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;

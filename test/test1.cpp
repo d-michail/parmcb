@@ -134,7 +134,7 @@ TEST_CASE("parallel sva signed"){
 
 }
 
-TEST_CASE("sequential sva trees"){
+TEST_CASE("sequential sva fvs trees"){
 
     Graph graph;
     create_graph(graph);
@@ -154,7 +154,7 @@ TEST_CASE("sequential sva trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_trees(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = mcb::mcb_sva_fvs_trees(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
@@ -166,7 +166,7 @@ TEST_CASE("sequential sva trees"){
 
 }
 
-TEST_CASE("parallel sva trees"){
+TEST_CASE("parallel sva fvs trees"){
 
     Graph graph;
     create_graph(graph);
@@ -186,7 +186,7 @@ TEST_CASE("parallel sva trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_trees_tbb(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = mcb::mcb_sva_fvs_trees_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;

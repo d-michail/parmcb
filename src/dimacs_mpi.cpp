@@ -88,6 +88,19 @@ int main(int argc, char *argv[]) {
     fclose(fp);
 
     if (world.rank() == 0) {
+        if (mcb::has_loops(graph)) {
+            std::cerr << "Graph has loops, aborting.." << std::endl;
+            return EXIT_FAILURE;
+        }
+        if (mcb::has_multiple_edges(graph)) {
+            std::cerr << "Graph has multiple edges, aborting.." << std::endl;
+            return EXIT_FAILURE;
+        }
+        if (mcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
+            std::cerr << "Graph has negative or zero weight edges, aborting.." << std::endl;
+            return EXIT_FAILURE;
+        }
+
         std::cout << "Graph has " << num_vertices(graph) << " vertices" << std::endl;
         std::cout << "Graph has " << num_edges(graph) << " edges" << std::endl;
         std::cout << std::flush;

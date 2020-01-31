@@ -7,60 +7,62 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graph_utility.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
 #include <mcb/forestindex.hpp>
 
-
 #define BUFFER_SIZE 1024
 
 namespace mcb {
 
-    namespace detail {
-
-        // The following version of the plus functor prevents
-        // problems due to overflow at positive infinity.
-
-        template<class T>
-        struct closed_plus {
-            const T inf;
-
-            closed_plus() :
-                    inf((std::numeric_limits<T>::max)()) {
+    template<class Graph>
+    bool has_loops(const Graph &g) {
+        auto eRange = boost::edges(g);
+        for (auto eit = eRange.first; eit != eRange.second; ++eit) {
+            auto e = *eit;
+            auto v = boost::source(e, g);
+            auto u = boost::target(e, g);
+            if (v == u) {
+                return true;
             }
-            closed_plus(T inf) :
-                    inf(inf) {
+        }
+        return false;
+    }
+
+    template<class Graph>
+    bool has_multiple_edges(const Graph &g) {
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+
+        auto vRange = boost::vertices(g);
+        for (auto vit = vRange.first; vit != vRange.second; ++vit) {
+            auto v = *vit;
+            std::set<Vertex> neighbors;
+
+            auto eRange = boost::out_edges(v, g);
+            for (auto eit = eRange.first; eit != eRange.second; ++eit) {
+                auto e = *eit;
+                auto u = boost::opposite(e, v, g);
+                if (!neighbors.insert(u).second) {
+                    return true;
+                }
             }
+        }
+        return false;
+    }
 
-            T operator()(const T &a, const T &b) const {
-                using namespace std;
-                if (a == inf)
-                    return inf;
-                if (b == inf)
-                    return inf;
-                return a + b;
+    template<class Graph, class WeightMap>
+    bool has_non_positive_weights(const Graph &g, const WeightMap &weight_map) {
+        auto eRange = boost::edges(g);
+        for (auto eit = eRange.first; eit != eRange.second; ++eit) {
+            auto e = *eit;
+            if (boost::get(weight_map, e) <= 0.0) {
+                return true;
             }
-        };
-
-        template<class Graph, class V>
-        struct VertexIndexFunctor {
-            typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
-            typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
-
-            std::vector<V> &values;
-            const VertexIndexMapType &index_map;
-
-            VertexIndexFunctor(std::vector<V> &values, const VertexIndexMapType &index_map) :
-                    values(values), index_map(index_map) {
-            }
-
-            V& operator()(const Vertex &v) const {
-                return values.at(index_map[v]);
-            }
-        };
-
-    } // detail
+        }
+        return false;
+    }
 
     template<class Graph>
     bool is_cycle(const Graph &g, const std::list<typename boost::graph_traits<Graph>::edge_descriptor> &cycle) {
@@ -94,9 +96,8 @@ namespace mcb {
         });
     }
 
-
     template<class Graph>
-    void read_dimacs_from_file(FILE *fp, Graph& graph) {
+    void read_dimacs_from_file(FILE *fp, Graph &graph) {
         typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
         typedef typename boost::graph_traits<Graph>::edge_descriptor edge_descriptor;
 

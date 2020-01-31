@@ -13,7 +13,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/detail/d_ary_heap.hpp>
 
-#include <mcb/util.hpp>
+#include <mcb/detail/util.hpp>
 
 namespace std {
 

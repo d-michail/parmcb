@@ -25,8 +25,6 @@ namespace mcb {
     template<class Graph, class WeightMap, class CycleOutputIterator, class CyclesBuilder, bool ParallelUsingTBB>
     typename boost::property_traits<WeightMap>::value_type _mcb_sva_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
-
-        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 

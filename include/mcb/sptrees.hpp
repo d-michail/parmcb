@@ -136,11 +136,11 @@ namespace mcb {
             return _tree_node_map[_index_map[v]];
         }
 
-        const Vertex& source() {
+        const Vertex& source() const {
             return _source;
         }
 
-        const Graph& graph() {
+        const Graph& graph() const {
             return _g;
         }
 
@@ -469,8 +469,8 @@ namespace mcb {
                 trees(trees), forest_index(forest_index) {
         }
 
-        SerializableCandidateCycle<Graph> operator()(const CandidateCycle<Graph, WeightMap> &cycle) {
-            return SerializableCandidateCycle<Graph>(trees[cycle.tree()].source(), forest_index(cycle.edge()));
+        SerializableCandidateCycle<Graph> operator()(const CandidateCycle<Graph, WeightMap> &cycle) const {
+            return SerializableCandidateCycle<Graph>(trees.at(cycle.tree()).source(), forest_index(cycle.edge()));
         }
 
     private:

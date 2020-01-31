@@ -32,7 +32,9 @@ int main(int argc, char *argv[]) {
         desc.add_options()
                 ("help,h", "Help")
                 ("verbose,v", po::value<bool>()->default_value(false)->implicit_value(true), "Verbose")
-                ("signed,s", po::value<bool>()->default_value(false), "Use one of either (a) signed graph or (b) shortest path trees")
+                ("signed", po::value<bool>()->default_value(true), "Use the signed graph algorithm")
+                ("fvstrees", po::value<bool>()->default_value(false), "Use cycles collection from feedback vertex set trees")
+                ("isotrees", po::value<bool>()->default_value(false), "Use isometric cycles collection")
                 ("printcycles", po::value<bool>()->default_value(false)->implicit_value(true), "Print cycles")
                 ("input-file,I",po::value<std::string>(), "Input filename");
         // @formatter:on
@@ -68,8 +70,9 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    std::cout << boost::format("processor name: %s, number of tasks: %d, rank: %d\n") % env.processor_name() % world.size() % world.rank();
-
+    std::cout
+            << boost::format("processor name: %s, number of tasks: %d, rank: %d\n") % env.processor_name()
+                    % world.size() % world.rank();
 
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
     typedef graph_traits<graph_t>::edge_descriptor edge_descriptor;
@@ -95,9 +98,22 @@ int main(int argc, char *argv[]) {
     double mcb_weight;
 
     if (vm["signed"].as<bool>()) {
+        if (world.rank() == 0) {
+            std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
+        }
         mcb_weight = mcb::mcb_sva_signed_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+    } else if (vm["fvstrees"].as<bool>()) {
+        if (world.rank() == 0) {
+            std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
+        }
+        mcb_weight = mcb::mcb_sva_fvs_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+                world);
     } else {
-        mcb_weight = mcb::mcb_sva_trees_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+        if (world.rank() == 0) {
+            std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
+        }
+        mcb_weight = mcb::mcb_sva_iso_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+                world);
     }
     timer.stop();
 

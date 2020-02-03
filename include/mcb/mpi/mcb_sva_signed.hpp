@@ -29,65 +29,21 @@
 
 namespace mcb {
 
-    template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_mpi(const Graph &g, WeightMap weight_map,
-            CycleOutputIterator out, boost::mpi::communicator &world, const std::size_t hardware_concurrency_hint = 0) {
+    namespace detail {
 
-        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
-        typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
-        typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
-        typedef typename boost::property_traits<WeightMap>::value_type WeightType;
+        template<class Graph, class WeightMap>
+        std::tuple<std::set<typename boost::graph_traits<Graph>::edge_descriptor>,
+                typename boost::property_traits<WeightMap>::value_type, bool> find_shortest_odd_cycle_mpi(
+                const Graph &g, const WeightMap &weight_map,
+                const std::vector<typename boost::graph_traits<Graph>::vertex_descriptor> &allVertices,
+                const ForestIndex<Graph> &forest_index,
+                const std::set<typename boost::graph_traits<Graph>::edge_descriptor> &signed_edges,
+                boost::mpi::communicator &world) {
 
-        /*
-         * Index the graph
-         */
-        ForestIndex<Graph> forest_index(g);
-        auto csd = forest_index.cycle_space_dimension();
-        std::vector<Vertex> vertices;
-        {
-            VertexIt vi, viend;
-            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
-                vertices.push_back(*vi);
-            }
-        }
+            typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+            typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+            typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        /*
-         * Initialize support vectors
-         */
-        tbb::concurrent_vector<SpVecGF2<std::size_t>> support;
-        tbb::parallel_for(tbb::blocked_range<std::size_t>(0, csd), [&](const tbb::blocked_range<std::size_t> &r) {
-            for (std::size_t i = r.begin(); i != r.end(); ++i) {
-                support.push_back(SpVecGF2<std::size_t> { i });
-            }
-        });
-
-        boost::mpi::timer total_timer;
-
-        /*
-         * Main loop
-         */
-        WeightType mcb_weight = WeightType();
-        for (std::size_t k = 0; k < csd; k++) {
-            if (k % 250 == 0) {
-                std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
-            }
-
-            // TODO: check if sparsest support heuristic makes sense here
-
-            // broadcast support vector
-            if (world.rank() == 0) {
-                boost::mpi::broadcast(world, support[k], 0);
-            } else {
-                SpVecGF2<std::size_t> received;
-                boost::mpi::broadcast(world, received, 0);
-                support[k] = received;
-            }
-
-            /*
-             * Compute shortest odd cycle
-             */
-            std::set<Edge> signed_edges;
-            convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
             std::less<WeightType> compare = std::less<WeightType>();
             std::tuple<std::set<Edge>, WeightType, bool> best = std::make_tuple(std::set<Edge> { },
                     (std::numeric_limits<WeightType>::max)(), false);
@@ -188,12 +144,12 @@ namespace mcb {
             } else {
                 // split implicitly all vertices
                 std::vector<Vertex> localVertices;
-                std::size_t stride = ceil((double) vertices.size() / world.size());
+                std::size_t stride = ceil((double) allVertices.size() / world.size());
                 std::size_t istart = world.rank() * stride;
                 std::size_t iend = istart + stride;
-                std::size_t total = vertices.size();
+                std::size_t total = allVertices.size();
                 for (std::size_t i = istart; i < iend && i < total; i++) {
-                    localVertices.push_back(vertices[i]);
+                    localVertices.push_back(allVertices[i]);
                 }
 
                 std::tuple<std::set<Edge>, WeightType, bool> best_local_cycle = tbb::parallel_reduce(
@@ -231,6 +187,71 @@ namespace mcb {
                 std::get<1>(best) = global_min_odd_cycle.weight;
                 std::get<2>(best) = global_min_odd_cycle.exists;
             }
+
+            return best;
+        }
+
+    }
+// detail
+
+    template<class Graph, class WeightMap, class CycleOutputIterator>
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_mpi(const Graph &g, WeightMap weight_map,
+            CycleOutputIterator out, boost::mpi::communicator &world, const std::size_t hardware_concurrency_hint = 0) {
+
+        typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+        typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
+        typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+        typedef typename boost::property_traits<WeightMap>::value_type WeightType;
+
+        /*
+         * Index the graph
+         */
+        ForestIndex<Graph> forest_index(g);
+        auto csd = forest_index.cycle_space_dimension();
+        std::vector<Vertex> vertices;
+        {
+            VertexIt vi, viend;
+            for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+                vertices.push_back(*vi);
+            }
+        }
+
+        /*
+         * Initialize support vectors
+         */
+        tbb::concurrent_vector<SpVecGF2<std::size_t>> support;
+        tbb::parallel_for(tbb::blocked_range<std::size_t>(0, csd), [&](const tbb::blocked_range<std::size_t> &r) {
+            for (std::size_t i = r.begin(); i != r.end(); ++i) {
+                support.push_back(SpVecGF2<std::size_t> { i });
+            }
+        });
+
+        boost::mpi::timer total_timer;
+
+        /*
+         * Main loop
+         */
+        WeightType mcb_weight = WeightType();
+        for (std::size_t k = 0; k < csd; k++) {
+            if (k % 250 == 0) {
+                std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
+            }
+
+            // TODO: check if sparsest support heuristic makes sense here
+
+            // broadcast support vector
+            if (world.rank() == 0) {
+                boost::mpi::broadcast(world, support[k], 0);
+            } else {
+                SpVecGF2<std::size_t> received;
+                boost::mpi::broadcast(world, received, 0);
+                support[k] = received;
+            }
+
+            std::set<Edge> signed_edges;
+            convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
+            std::tuple<std::set<Edge>, WeightType, bool> best = mcb::detail::find_shortest_odd_cycle_mpi(g, weight_map,
+                    vertices, forest_index, signed_edges, world);
 
             if (world.rank() == 0) {
                 /*

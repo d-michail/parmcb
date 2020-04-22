@@ -43,6 +43,9 @@ find_package(TBB)
 # MPI
 find_package(MPI COMPONENTS CXX)
 
+# Use classic install dirs
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
@@ -50,9 +53,9 @@ add_subdirectory(include/parmcb)
 add_subdirectory(include/parmcb/detail)
 add_subdirectory(include/parmcb/mpi)
 include_directories(${PROJECT_SOURCE_DIR}/include)
-set(MCB_HAVE_BOOST ${Boost_FOUND})
-set(MCB_HAVE_TBB ${TBB_FOUND})
-set(MCB_HAVE_MPI ${MPI_FOUND})
+set(PARMCB_HAVE_BOOST ${Boost_FOUND})
+set(PARMCB_HAVE_TBB ${TBB_FOUND})
+set(PARMCB_HAVE_MPI ${MPI_FOUND})
 
 # If you have ABI problems, try this one
 #add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
@@ -60,7 +63,7 @@ set(MCB_HAVE_MPI ${MPI_FOUND})
 add_library(parmcb INTERFACE)
 target_include_directories(parmcb INTERFACE ${PROJECT_SOURCE_DIR}/include/)
 configure_file(include/parmcb/config.hpp.in config.hpp)
-install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/mcb)
+install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/parmcb)
 
 add_executable(dimacs src/dimacs.cpp)
 target_include_directories(dimacs PUBLIC ${PROJECT_SOURCE_DIR}/include)

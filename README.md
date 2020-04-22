@@ -1,10 +1,13 @@
 
-# Parallel and Distributed Minimum Cycle Basis Library
+# Minimum Cycle Basis Library
 
 This project implements algorithms to compute exact and approximate Minimum Cycle Bases of weighted graphs. 
 The library is written in C++-14 using the [Boost Graph](https://www.boost.org/) libraries for the underlying
-graph implementation. Multicore support is provided using the
-[TBB (Intel Threading Building Blocks)](https://software.intel.com/en-us/tbb) library.
+graph implementation.
+
+Support for parallel and distributed execution is provided using: 
+ * The [TBB (Intel Threading Building Blocks)](https://software.intel.com/en-us/tbb) library, 
+ * The Message Mapping Interface (MPI).
 
 TODO
 

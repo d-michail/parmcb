@@ -117,7 +117,7 @@ namespace parmcb {
         std::vector<parmcb::SPTree<Graph, WeightMap>> trees;
         std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
         for (auto const &p : perVertexCandidates) {
-            SPTree<Graph, WeightMap> tree(trees.size(), g, weight_map, p.first);
+            SPTree<Graph, WeightMap> tree(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, p.first);
             trees.push_back(tree);
             std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(p.second.begin(),
                     p.second.end());

@@ -59,16 +59,16 @@ namespace parmcb {
             }
         };
 
-        template<class Graph, class WeightMap, class DistanceMap>
+        template<class Graph, class IndexMap, class WeightMap, class DistanceMap>
         struct LexDistanceCombine {
             typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
             typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
             typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
             typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-            LexDistanceCombine(const Graph &g, const WeightMap &weight_map) :
+            LexDistanceCombine(const Graph &g, const IndexMap &index_map, const WeightMap &weight_map) :
                     inf((std::numeric_limits<DistanceType>::max)()), g(g), index_map(
-                            boost::get(boost::vertex_index, g)), weight_map(weight_map) {
+                            index_map), weight_map(weight_map) {
             }
 
             LexDistance<Graph, DistanceMap> operator()(const LexDistance<Graph, DistanceMap> &a, const Edge &e) {
@@ -121,7 +121,7 @@ namespace parmcb {
                         LexDistanceType&>, LexDistanceCompareType> VertexQueue;
 
         LexDistanceCompareType compare;
-        parmcb::detail::LexDistanceCombine<Graph, WeightMap, DistanceMap> combine(g, weight_map);
+        parmcb::detail::LexDistanceCombine<Graph, VertexIndexMapType, WeightMap, DistanceMap> combine(g, index_map, weight_map);
 
         VertexQueue queue(lex_dist_map, index_in_heap_map, compare);
 

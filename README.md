@@ -1,12 +1,17 @@
 
 # Parallel and Distributed Minimum Cycle Basis Library
 
+This project implements algorithms to compute exact and approximate Minimum Cycle Bases of weighted graphs. 
+The library is written in C++-14 using the [Boost Graph](https://www.boost.org/) libraries for the underlying
+graph implementation. Multicore support is provided using the
+[TBB (Intel Threading Building Blocks)](https://software.intel.com/en-us/tbb) library.
+
 TODO
 
 # Develop
 
-The library is written in C++-14 using CMake. It has been tested with both GCC and the Clang compilers.
-The library requires the Boost libraries and TBB (Intel Threading Building Blocks).
+In order to build the library you need to have CMake installed. A C++-14 compiler is required, such as 
+GCC or Clang.
 
 ## Using Eclipse
 

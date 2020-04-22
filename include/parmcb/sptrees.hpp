@@ -110,8 +110,8 @@ namespace parmcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
-        SPTree(std::size_t id, const Graph &g, const WeightMap &weight_map, const Vertex &source) :
-                _id(id), _g(g), _weight_map(weight_map), _index_map(boost::get(boost::vertex_index, g)), _source(
+        SPTree(std::size_t id, const Graph &g, const VertexIndexMapType& index_map, const WeightMap &weight_map, const Vertex &source) :
+                _id(id), _g(g), _weight_map(weight_map), _index_map(index_map), _source(
                         source), _tree_node_map(boost::num_vertices(g)), _first_in_path(boost::num_vertices(g)) {
             initialize();
         }

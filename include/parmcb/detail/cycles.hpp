@@ -40,7 +40,7 @@ namespace parmcb {
                 std::vector<Vertex> feedback_vertex_set;
                 parmcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
                 for (auto v : feedback_vertex_set) {
-                    trees.emplace_back(trees.size(), g, weight_map, v);
+                    trees.emplace_back(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v);
                 }
                 for (auto &tree : trees) {
                     std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
@@ -72,7 +72,7 @@ namespace parmcb {
                 for (boost::tie(ui, uiend) = boost::vertices(g); ui != uiend; ++ui) {
                     auto u = *ui;
                     auto uindex = index_map[u];
-                    trees.emplace_back(next_tree, g, weight_map, u);
+                    trees.emplace_back(next_tree, g, boost::get(boost::vertex_index, g), weight_map, u);
                     trees_index_map[uindex] = next_tree;
                     next_tree++;
                 }

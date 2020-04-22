@@ -6,8 +6,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <mcb/mcb.hpp>
-#include <mcb/util.hpp>
+#include <parmcb/parmcb.hpp>
+#include <parmcb/util.hpp>
 
 using namespace boost;
 typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > Graph;
@@ -90,11 +90,11 @@ TEST_CASE("sequential sva signed"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_signed(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_signed(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);
@@ -122,11 +122,11 @@ TEST_CASE("parallel sva signed"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_signed_tbb(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_signed_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);
@@ -154,11 +154,11 @@ TEST_CASE("sequential sva fvs trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_fvs_trees(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_fvs_trees(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);
@@ -186,11 +186,11 @@ TEST_CASE("parallel sva fvs trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_fvs_trees_tbb(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);
@@ -218,11 +218,11 @@ TEST_CASE("sequential sva iso trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_iso_trees(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_iso_trees(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);
@@ -250,11 +250,11 @@ TEST_CASE("parallel sva iso trees"){
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = mcb::mcb_sva_iso_trees_tbb(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
-        CHECK(mcb::is_cycle(graph, cycle));
+        CHECK(parmcb::is_cycle(graph, cycle));
     }
 
     CHECK(cycles.size() == 3);

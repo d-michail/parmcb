@@ -1,5 +1,5 @@
-#ifndef MCB_DETAIL_SPANNING_FOREST_HPP_
-#define MCB_DETAIL_SPANNING_FOREST_HPP_
+#ifndef PARMCB_DETAIL_SPANNING_FOREST_HPP_
+#define PARMCB_DETAIL_SPANNING_FOREST_HPP_
 
 #include <map>
 #include <queue>
@@ -7,7 +7,7 @@
 
 #include <boost/graph/adjacency_list.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -68,6 +68,6 @@ namespace mcb {
 
     } // detail
 
-} // namespace mcb
+} // parmcb
 
 #endif

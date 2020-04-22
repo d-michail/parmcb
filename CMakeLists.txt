@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 3.10 FATAL_ERROR)
 
-project (mcb CXX)
+project (parmcb CXX)
 
 set(VERSION "0.1")
 set(PACKAGE_VERSION "0.1")
-set(DESCRIPTION "Minimum Cycle Basis Library")
+set(DESCRIPTION "Parallel Minimum Cycle Basis Library")
 
 set(LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 14)
@@ -13,7 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 message(STATUS "We are on a ${CMAKE_SYSTEM_NAME} system")
 message(STATUS "The host processor is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
-message(STATUS "Building MCB library version: ${VERSION}")
+message(STATUS "Building PARMCB library version: ${VERSION}")
 
 ## Add custom path with cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/etc/cmake/")
@@ -22,7 +22,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/etc/cmake/")
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Requires an out-of-source build. Please create a separate build directory and run 'cmake path/to/parmcb [options]' there.")
 endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-
 
 ## additional user-defined library directories
 foreach(library ${CMAKE_EXTRA_LIBRARIES})
@@ -47,19 +46,20 @@ find_package(MPI COMPONENTS CXX)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
-add_subdirectory(include/mcb)
-add_subdirectory(include/mcb/detail)
-add_subdirectory(include/mcb/mpi)
+add_subdirectory(include/parmcb)
+add_subdirectory(include/parmcb/detail)
+add_subdirectory(include/parmcb/mpi)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 set(MCB_HAVE_BOOST ${Boost_FOUND})
 set(MCB_HAVE_TBB ${TBB_FOUND})
 set(MCB_HAVE_MPI ${MPI_FOUND})
 
+# If you have ABI problems, try this one
 #add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
-add_library(mcb INTERFACE)
-target_include_directories(mcb INTERFACE ${PROJECT_SOURCE_DIR}/include/)
-configure_file(include/mcb/config.hpp.in config.hpp)
+add_library(parmcb INTERFACE)
+target_include_directories(parmcb INTERFACE ${PROJECT_SOURCE_DIR}/include/)
+configure_file(include/parmcb/config.hpp.in config.hpp)
 install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/mcb)
 
 add_executable(dimacs src/dimacs.cpp)
@@ -108,7 +108,7 @@ target_compile_definitions(test_fvs PUBLIC ${TBB_DEFINITIONS})
 target_link_libraries(test_fvs ${TBB_LIBRARIES})
 add_test(NAME test_fvs COMMAND test_fvs)
 
-install(TARGETS mcb dimacs dimacs_mpi
+install(TARGETS parmcb dimacs dimacs_mpi
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
         )

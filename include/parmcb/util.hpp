@@ -1,5 +1,5 @@
-#ifndef MCB_UTIL_HPP_
-#define MCB_UTIL_HPP_
+#ifndef PARMCB_UTIL_HPP_
+#define PARMCB_UTIL_HPP_
 
 #include <vector>
 #include <set>
@@ -11,11 +11,11 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <mcb/forestindex.hpp>
+#include <parmcb/forestindex.hpp>
 
 #define BUFFER_SIZE 1024
 
-namespace mcb {
+namespace parmcb {
 
     template<class Graph>
     bool has_loops(const Graph &g) {

@@ -5,7 +5,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <mcb/detail/fvs.hpp>
+#include <parmcb/detail/fvs.hpp>
 
 TEST_CASE("Feedback Vertex Set")
 {
@@ -66,7 +66,7 @@ TEST_CASE("Feedback Vertex Set")
 
     typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
     std::set<Vertex> result;
-    mcb::greedy_fvs(graph, std::inserter(result, result.end()));
+    parmcb::greedy_fvs(graph, std::inserter(result, result.end()));
 
     CHECK(result.size() == 2);
     CHECK(result.count(4)>0);

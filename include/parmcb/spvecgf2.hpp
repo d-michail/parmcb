@@ -1,5 +1,5 @@
-#ifndef MCB_SPVECGF2_HPP_
-#define MCB_SPVECGF2_HPP_
+#ifndef PARMCB_SPVECGF2_HPP_
+#define PARMCB_SPVECGF2_HPP_
 
 #include <vector>
 #include <set>
@@ -8,7 +8,7 @@
 
 #include <boost/serialization/vector.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     template<typename U>
     class SpVecGF2 {
@@ -185,6 +185,6 @@ namespace mcb {
         return o;
     }
 
-} // mcb
+} // parmcb
 
 #endif

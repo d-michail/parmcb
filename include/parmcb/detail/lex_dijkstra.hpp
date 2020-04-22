@@ -1,5 +1,5 @@
-#ifndef MCB_LEX_DIJKSTRA_HPP_
-#define MCB_LEX_DIJKSTRA_HPP_
+#ifndef PARMCB_LEX_DIJKSTRA_HPP_
+#define PARMCB_LEX_DIJKSTRA_HPP_
 
 #include <iostream>
 
@@ -13,10 +13,10 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/detail/d_ary_heap.hpp>
 
-#include <mcb/detail/dijkstra.hpp>
-#include <mcb/detail/util.hpp>
+#include <parmcb/detail/dijkstra.hpp>
+#include <parmcb/detail/util.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -83,7 +83,7 @@ namespace mcb {
             }
 
             const DistanceType inf;
-            const mcb::detail::closed_plus<DistanceType> combine;
+            const parmcb::detail::closed_plus<DistanceType> combine;
             const Graph &g;
             const VertexIndexMapType &index_map;
             const WeightMap &weight_map;
@@ -101,25 +101,27 @@ namespace mcb {
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
         typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
 
-        typedef typename mcb::detail::LexDistance<Graph, DistanceMap> LexDistanceType;
-        typedef typename mcb::detail::LexDistanceCompare<Graph, DistanceMap> LexDistanceCompareType;
+        typedef typename parmcb::detail::LexDistance<Graph, DistanceMap> LexDistanceType;
+        typedef typename parmcb::detail::LexDistanceCompare<Graph, DistanceMap> LexDistanceCompareType;
 
         const VertexIndexMapType &index_map = boost::get(boost::vertex_index, g);
         std::vector<std::size_t> index_in_heap(boost::num_vertices(g));
-        boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&> index_in_heap_map(
-                mcb::detail::VertexIndexFunctor<Graph, std::size_t>(index_in_heap, index_map));
+        boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&> index_in_heap_map(
+                parmcb::detail::VertexIndexFunctor<Graph, std::size_t>(index_in_heap, index_map));
 
         std::vector<LexDistanceType> lex_dist(boost::num_vertices(g));
-        boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, LexDistanceType>, Vertex, LexDistanceType&> lex_dist_map(
-                        mcb::detail::VertexIndexFunctor<Graph, LexDistanceType>(lex_dist, index_map));
+        boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, LexDistanceType>, Vertex,
+                LexDistanceType&> lex_dist_map(
+                parmcb::detail::VertexIndexFunctor<Graph, LexDistanceType>(lex_dist, index_map));
 
         typedef boost::d_ary_heap_indirect<Vertex, 4,
-                boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&>,
-                boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, LexDistanceType>, Vertex,
+                boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex,
+                        std::size_t&>,
+                boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, LexDistanceType>, Vertex,
                         LexDistanceType&>, LexDistanceCompareType> VertexQueue;
 
         LexDistanceCompareType compare;
-        mcb::detail::LexDistanceCombine<Graph, WeightMap, DistanceMap> combine(g, weight_map);
+        parmcb::detail::LexDistanceCombine<Graph, WeightMap, DistanceMap> combine(g, weight_map);
 
         VertexQueue queue(lex_dist_map, index_in_heap_map, compare);
 

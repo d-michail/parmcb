@@ -1,5 +1,5 @@
-#ifndef MCB_SVA_SIGNED_TBB_HPP_
-#define MCB_SVA_SIGNED_TBB_HPP_
+#ifndef PARMCB_SVA_SIGNED_TBB_HPP_
+#define PARMCB_SVA_SIGNED_TBB_HPP_
 
 #include <cstddef>
 #include <functional>
@@ -18,12 +18,12 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/task_group.h>
 
-#include <mcb/detail/signed_dijkstra.hpp>
-#include <mcb/forestindex.hpp>
-#include <mcb/spvecgf2.hpp>
-#include <mcb/util.hpp>
+#include <parmcb/detail/signed_dijkstra.hpp>
+#include <parmcb/forestindex.hpp>
+#include <parmcb/spvecgf2.hpp>
+#include <parmcb/util.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -211,7 +211,7 @@ namespace mcb {
          * Main loop
          */
         WeightType mcb_weight = WeightType();
-        mcb::detail::OddCycleFinder<Graph, WeightMap> odd_cycle_finder(g, weight_map, forest_index, vertices);
+        parmcb::detail::OddCycleFinder<Graph, WeightMap> odd_cycle_finder(g, weight_map, forest_index, vertices);
         for (std::size_t k = 0; k < csd; k++) {
             if (k % 250 == 0) {
                 std::cout << k << std::endl;
@@ -268,6 +268,6 @@ namespace mcb {
         return mcb_weight;
     }
 
-} // namespace mcb
+} // namespace parmcb
 
 #endif

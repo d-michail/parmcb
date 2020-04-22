@@ -1,5 +1,5 @@
-#ifndef MCB_SVA_SIGNED_HPP_
-#define MCB_SVA_SIGNED_HPP_
+#ifndef PARMCB_SVA_SIGNED_HPP_
+#define PARMCB_SVA_SIGNED_HPP_
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -14,13 +14,13 @@
 #include <set>
 #include <vector>
 
-#include <mcb/detail/signed_dijkstra.hpp>
+#include <parmcb/detail/signed_dijkstra.hpp>
 
-#include <mcb/forestindex.hpp>
-#include <mcb/spvecgf2.hpp>
-#include <mcb/util.hpp>
+#include <parmcb/forestindex.hpp>
+#include <parmcb/spvecgf2.hpp>
+#include <parmcb/util.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_signed(const Graph &g, WeightMap weight_map,
@@ -145,6 +145,6 @@ namespace mcb {
         return mcb_weight;
     }
 
-} // namespace mcb
+} // parmcb
 
 #endif

@@ -1,1 +1,0 @@
-install(FILES cycles.hpp dijkstra.hpp fvs.hpp lex_dijkstra.hpp signed_dijkstra.hpp spanning_forest.hpp DESTINATION include/mcb/detail)

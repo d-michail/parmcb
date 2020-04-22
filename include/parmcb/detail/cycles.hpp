@@ -1,11 +1,11 @@
-#ifndef MCB_DETAIL_CYCLES_HPP_
-#define MCB_DETAIL_CYCLES_HPP_
+#ifndef PARMCB_DETAIL_CYCLES_HPP_
+#define PARMCB_DETAIL_CYCLES_HPP_
 
 #include <iostream>
 #include <map>
-#include <mcb/util.hpp>
-#include <mcb/sptrees.hpp>
-#include <mcb/detail/fvs.hpp>
+#include <parmcb/util.hpp>
+#include <parmcb/sptrees.hpp>
+#include <parmcb/detail/fvs.hpp>
 
 #include <boost/graph/connected_components.hpp>
 
@@ -25,7 +25,7 @@ namespace boost {
 
 }
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -33,12 +33,12 @@ namespace mcb {
         struct FVSCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
-                    std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
                 typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
 
                 std::vector<Vertex> feedback_vertex_set;
-                mcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
+                parmcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
                 for (auto v : feedback_vertex_set) {
                     trees.emplace_back(trees.size(), g, weight_map, v);
                 }
@@ -54,7 +54,7 @@ namespace mcb {
         struct ISOCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
-                    std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
                 typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
                 typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
@@ -118,7 +118,7 @@ namespace mcb {
                     auto tree = boost::get(tree_map, *alli);
                     auto e = boost::get(edge_map, *alli);
 
-                    mcb::SPTree<Graph, WeightMap> &tree_x = trees[tree];
+                    parmcb::SPTree<Graph, WeightMap> &tree_x = trees[tree];
                     auto x = tree_x.source();
                     auto u = boost::source(e, g);
                     auto v = boost::target(e, g);
@@ -136,7 +136,7 @@ namespace mcb {
                         //std::cout << "TODO: 1 (v,e)" << std::endl;
                     } else {
                         auto xprime = tree_x.first(u);
-                        mcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
+                        parmcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
 
                         auto first_xprime_v = tree_xprime.first(v);
 
@@ -145,7 +145,7 @@ namespace mcb {
                                     cycle_to_vertex[std::make_pair(trees_index_map[index_map[xprime]], e)], cycles_g);
                             //std::cout << "TODO: 2a is (x',e)" << std::endl;
                         } else {
-                            mcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[index_map[v]]];
+                            parmcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[index_map[v]]];
                             auto first_v_xprime = tree_v.first(xprime);
                             if (u == first_v_xprime) {
                                 boost::add_edge(*alli,
@@ -164,9 +164,9 @@ namespace mcb {
                  * Find components
                  */
                 std::vector<std::size_t> components(boost::num_vertices(cycles_g));
-                boost::function_property_map<mcb::detail::VertexIndexFunctor<graph_t, std::size_t>, vertex_descriptor,
-                        std::size_t&> components_map(
-                        mcb::detail::VertexIndexFunctor<graph_t, std::size_t>(components,
+                boost::function_property_map<parmcb::detail::VertexIndexFunctor<graph_t, std::size_t>,
+                        vertex_descriptor, std::size_t&> components_map(
+                        parmcb::detail::VertexIndexFunctor<graph_t, std::size_t>(components,
                                 boost::get(boost::vertex_index, cycles_g)));
                 std::size_t num_components = boost::connected_components(cycles_g, components_map);
 
@@ -184,7 +184,7 @@ namespace mcb {
                     if (!is_bad_component[component] && !is_in_output[component]) {
                         auto tree = boost::get(tree_map, v);
                         auto e = boost::get(edge_map, v);
-                        mcb::SPTree<Graph, WeightMap> &tree_v = trees[tree];
+                        parmcb::SPTree<Graph, WeightMap> &tree_v = trees[tree];
 
                         std::shared_ptr<SPNode<Graph, WeightMap>> spnode_v = tree_v.node(boost::source(e, g));
                         if (spnode_v == nullptr) {
@@ -205,6 +205,6 @@ namespace mcb {
 
     } // detail
 
-} // mcb
+} // parmcb
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef MCB_DETAIL_UTIL_HPP_
-#define MCB_DETAIL_UTIL_HPP_
+#ifndef PARMCB_DETAIL_UTIL_HPP_
+#define PARMCB_DETAIL_UTIL_HPP_
 
 #include <vector>
 #include <set>
@@ -10,7 +10,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 

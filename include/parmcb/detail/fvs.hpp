@@ -1,5 +1,5 @@
-#ifndef MCB_FVS_HPP_
-#define MCB_FVS_HPP_
+#ifndef PARMCB_FVS_HPP_
+#define PARMCB_FVS_HPP_
 
 #include <iostream>
 
@@ -13,7 +13,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/heap/pairing_heap.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -165,6 +165,6 @@ namespace mcb {
 
     }
 
-} // mcb
+} // parmcb
 
 #endif

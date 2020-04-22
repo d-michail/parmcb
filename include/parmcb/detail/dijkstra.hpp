@@ -1,5 +1,5 @@
-#ifndef MCB_DIJKSTRA_HPP_
-#define MCB_DIJKSTRA_HPP_
+#ifndef PARMCB_DIJKSTRA_HPP_
+#define PARMCB_DIJKSTRA_HPP_
 
 #include <iostream>
 
@@ -13,9 +13,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/detail/d_ary_heap.hpp>
 
-#include <mcb/detail/util.hpp>
+#include <parmcb/detail/util.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -49,16 +49,16 @@ namespace mcb {
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
         typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
         typedef boost::d_ary_heap_indirect<Vertex, 4,
-                boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&>,
-                DistanceMap, std::less<DistanceType>> VertexQueue;
+                boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex,
+                        std::size_t&>, DistanceMap, std::less<DistanceType>> VertexQueue;
 
         std::less<DistanceType> compare;
-        mcb::detail::closed_plus<DistanceType> combine = mcb::detail::closed_plus<DistanceType>();
+        parmcb::detail::closed_plus<DistanceType> combine = parmcb::detail::closed_plus<DistanceType>();
 
         const VertexIndexMapType &index_map = boost::get(boost::vertex_index, g);
         std::vector<std::size_t> index_in_heap(boost::num_vertices(g));
-        boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&> index_in_heap_map(
-                mcb::detail::VertexIndexFunctor<Graph, std::size_t>(index_in_heap, index_map));
+        boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::size_t>, Vertex, std::size_t&> index_in_heap_map(
+                parmcb::detail::VertexIndexFunctor<Graph, std::size_t>(index_in_heap, index_map));
 
         VertexQueue queue(dist_map, index_in_heap_map, compare);
 
@@ -104,6 +104,6 @@ namespace mcb {
         }
     }
 
-} // mcb
+} // parmcb
 
 #endif

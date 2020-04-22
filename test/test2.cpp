@@ -5,7 +5,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <mcb/forestindex.hpp>
+#include <parmcb/forestindex.hpp>
 
 TEST_CASE("forest index")
 {
@@ -59,7 +59,7 @@ TEST_CASE("forest index")
     //  16   17     15 --  14
     //
 
-    mcb::ForestIndex<Graph> fi(graph);
+    parmcb::ForestIndex<Graph> fi(graph);
 
     CHECK(fi.weak_connected_components() == 4);
     CHECK(fi.cycle_space_dimension() == 3);

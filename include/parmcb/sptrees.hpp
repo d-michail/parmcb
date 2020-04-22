@@ -1,5 +1,5 @@
-#ifndef MCB_SPTREES_HPP_
-#define MCB_SPTREES_HPP_
+#ifndef PARMCB_SPTREES_HPP_
+#define PARMCB_SPTREES_HPP_
 
 #include <iostream>
 
@@ -12,11 +12,11 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/serialization/vector.hpp>
 
-#include <mcb/detail/lex_dijkstra.hpp>
-#include <mcb/detail/util.hpp>
+#include <parmcb/detail/lex_dijkstra.hpp>
+#include <parmcb/detail/util.hpp>
 
-#include <mcb/forestindex.hpp>
-#include <mcb/spvecgf2.hpp>
+#include <parmcb/forestindex.hpp>
+#include <parmcb/spvecgf2.hpp>
 
 #include <memory>
 #include <stack>
@@ -24,7 +24,7 @@
 
 #include <tbb/tbb.h>
 
-namespace mcb {
+namespace parmcb {
 
     template<class Graph, class WeightMap> class SPNode;
     template<class Graph, class WeightMap> class SPTree;
@@ -267,12 +267,12 @@ namespace mcb {
         void initialize() {
             // run shortest path
             std::vector<WeightType> dist(boost::num_vertices(_g), (std::numeric_limits<WeightType>::max)());
-            boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, WeightType>, Vertex, WeightType&> dist_map(
-                    mcb::detail::VertexIndexFunctor<Graph, WeightType>(dist, _index_map));
+            boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, WeightType>, Vertex, WeightType&> dist_map(
+                    parmcb::detail::VertexIndexFunctor<Graph, WeightType>(dist, _index_map));
             std::vector<std::tuple<bool, Edge>> pred(boost::num_vertices(_g), std::make_tuple(false, Edge()));
-            boost::function_property_map<mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge>>, Vertex,
+            boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge>>, Vertex,
                     std::tuple<bool, Edge>&> pred_map(
-                    mcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, _index_map));
+                    parmcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, _index_map));
             lex_dijkstra(_g, _weight_map, _source, dist_map, pred_map);
 
             // create tree nodes and mapping
@@ -464,7 +464,7 @@ namespace mcb {
     template<class Graph, class WeightMap>
     class CandidateCycleToSerializableConverter {
     public:
-        CandidateCycleToSerializableConverter(const std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+        CandidateCycleToSerializableConverter(const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
                 const ForestIndex<Graph> &forest_index) :
                 trees(trees), forest_index(forest_index) {
         }
@@ -474,7 +474,7 @@ namespace mcb {
         }
 
     private:
-        const std::vector<mcb::SPTree<Graph, WeightMap>> &trees;
+        const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees;
         const ForestIndex<Graph> &forest_index;
     };
 
@@ -489,7 +489,7 @@ namespace mcb {
                 g(g), weight_map(weight_map) {
         }
 
-        std::tuple<std::set<Edge>, WeightType, bool> operator()(const std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
+        std::tuple<std::set<Edge>, WeightType, bool> operator()(const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
                 const CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &signed_edges, bool use_weight_limit,
                 WeightType weight_limit) const {
 
@@ -570,8 +570,8 @@ namespace mcb {
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
         ShortestOddCycleLookup(const Graph &g, const WeightMap &weight_map,
-                std::vector<mcb::SPTree<Graph, WeightMap>> &trees,
-                std::vector<mcb::CandidateCycle<Graph, WeightMap>> &cycles, bool sorted_cycles) :
+                std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                std::vector<parmcb::CandidateCycle<Graph, WeightMap>> &cycles, bool sorted_cycles) :
                 g(g), weight_map(weight_map), candidate_cycle_builder(g, weight_map), trees(trees), cycles(cycles), sorted_cycles(
                         sorted_cycles) {
         }
@@ -662,11 +662,11 @@ namespace mcb {
         const Graph &g;
         const WeightMap &weight_map;
         const CandidateCycleBuilder<Graph, WeightMap> candidate_cycle_builder;
-        std::vector<mcb::SPTree<Graph, WeightMap>> &trees;
-        std::vector<mcb::CandidateCycle<Graph, WeightMap>> &cycles;
+        std::vector<parmcb::SPTree<Graph, WeightMap>> &trees;
+        std::vector<parmcb::CandidateCycle<Graph, WeightMap>> &cycles;
         bool sorted_cycles;
     };
 
-} // mcb
+} // parmcb
 
 #endif

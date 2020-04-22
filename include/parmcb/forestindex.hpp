@@ -1,5 +1,5 @@
-#ifndef MCB_FORESTINDEX_HPP_
-#define MCB_FORESTINDEX_HPP_
+#ifndef PARMCB_FORESTINDEX_HPP_
+#define PARMCB_FORESTINDEX_HPP_
 
 #include <vector>
 #include <map>
@@ -11,9 +11,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/concept/assert.hpp>
 
-#include <mcb/detail/spanning_forest.hpp>
+#include <parmcb/detail/spanning_forest.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     template<class Graph>
     class ForestIndex {
@@ -82,7 +82,7 @@ namespace mcb {
             std::set<Edge> forest;
             n = boost::num_vertices(g);
             m = boost::num_edges(g);
-            k = mcb::detail::spanning_forest(g, std::inserter(forest, forest.begin()));
+            k = parmcb::detail::spanning_forest(g, std::inserter(forest, forest.begin()));
 
             index.clear();
             reverse_index.resize(m);
@@ -108,6 +108,6 @@ namespace mcb {
 
     };
 
-} // namespace mcb
+} // namespace parmcb
 
 #endif

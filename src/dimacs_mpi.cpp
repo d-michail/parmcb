@@ -15,7 +15,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 
-#include <mcb/mpi/mcb.hpp>
+#include <parmcb/mpi/parmcb.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -84,19 +84,19 @@ int main(int argc, char *argv[]) {
         std::cerr << "Failed to open input file." << std::endl;
         exit(EXIT_FAILURE);
     }
-    mcb::read_dimacs_from_file(fp, graph);
+    parmcb::read_dimacs_from_file(fp, graph);
     fclose(fp);
 
     if (world.rank() == 0) {
-        if (mcb::has_loops(graph)) {
+        if (parmcb::has_loops(graph)) {
             std::cerr << "Graph has loops, aborting.." << std::endl;
             return EXIT_FAILURE;
         }
-        if (mcb::has_multiple_edges(graph)) {
+        if (parmcb::has_multiple_edges(graph)) {
             std::cerr << "Graph has multiple edges, aborting.." << std::endl;
             return EXIT_FAILURE;
         }
-        if (mcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
+        if (parmcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
             std::cerr << "Graph has negative or zero weight edges, aborting.." << std::endl;
             return EXIT_FAILURE;
         }
@@ -114,18 +114,18 @@ int main(int argc, char *argv[]) {
         if (world.rank() == 0) {
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
         }
-        mcb_weight = mcb::mcb_sva_signed_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+        mcb_weight = parmcb::mcb_sva_signed_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
     } else if (vm["fvstrees"].as<bool>()) {
         if (world.rank() == 0) {
             std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
         }
-        mcb_weight = mcb::mcb_sva_fvs_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+        mcb_weight = parmcb::mcb_sva_fvs_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                 world);
     } else {
         if (world.rank() == 0) {
             std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
         }
-        mcb_weight = mcb::mcb_sva_iso_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+        mcb_weight = parmcb::mcb_sva_iso_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                 world);
     }
     timer.stop();
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
                 }
                 std::cout << std::endl;
 
-                assert(mcb::is_cycle(graph, cycle));
+                assert(parmcb::is_cycle(graph, cycle));
             }
         }
 

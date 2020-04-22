@@ -1,5 +1,5 @@
-#ifndef MCB_SIGNED_DIJKSTRA_HPP_
-#define MCB_SIGNED_DIJKSTRA_HPP_
+#ifndef PARMCB_SIGNED_DIJKSTRA_HPP_
+#define PARMCB_SIGNED_DIJKSTRA_HPP_
 
 #include <iostream>
 
@@ -13,7 +13,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/detail/d_ary_heap.hpp>
 
-#include <mcb/detail/util.hpp>
+#include <parmcb/detail/util.hpp>
 
 namespace std {
 
@@ -24,7 +24,7 @@ namespace std {
 
 }
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -99,9 +99,9 @@ namespace mcb {
             typedef std::pair<Vertex, bool> SignedVertex;
             typedef std::tuple<SignedVertex, bool, Edge> Predecessor;
             typedef boost::d_ary_heap_indirect<SignedVertex, 4,
-                    boost::function_property_map<mcb::detail::SignedIndexInHeapFunctor<Graph>, SignedVertex,
+                    boost::function_property_map<parmcb::detail::SignedIndexInHeapFunctor<Graph>, SignedVertex,
                             std::size_t&>,
-                    boost::function_property_map<mcb::detail::SignedDistanceFunctor<Graph, WeightMap>, SignedVertex,
+                    boost::function_property_map<parmcb::detail::SignedDistanceFunctor<Graph, WeightMap>, SignedVertex,
                             DistanceType&>, std::less<DistanceType>> VertexQueue;
 
             const Graph &g;
@@ -109,10 +109,10 @@ namespace mcb {
             std::vector<std::size_t> index_in_heap;
             std::vector<DistanceType> dist;
             std::vector<Predecessor> pred;
-            boost::function_property_map<mcb::detail::SignedIndexInHeapFunctor<Graph>, SignedVertex, std::size_t&> index_in_heap_map;
-            boost::function_property_map<mcb::detail::SignedDistanceFunctor<Graph, WeightMap>, SignedVertex,
+            boost::function_property_map<parmcb::detail::SignedIndexInHeapFunctor<Graph>, SignedVertex, std::size_t&> index_in_heap_map;
+            boost::function_property_map<parmcb::detail::SignedDistanceFunctor<Graph, WeightMap>, SignedVertex,
                     DistanceType&> dist_map;
-            boost::function_property_map<mcb::detail::SignedPredecessorFunctor<Graph>, SignedVertex, Predecessor&> pred_map;
+            boost::function_property_map<parmcb::detail::SignedPredecessorFunctor<Graph>, SignedVertex, Predecessor&> pred_map;
             std::less<DistanceType> compare;
             VertexQueue queue;
             SignedVertex source;
@@ -121,11 +121,11 @@ namespace mcb {
                     g(g), index_map(boost::get(boost::vertex_index, g)), index_in_heap(2 * boost::num_vertices(g)), dist(
                             2 * boost::num_vertices(g), (std::numeric_limits<DistanceType>::max)()), pred(
                             2 * boost::num_vertices(g), std::make_tuple(std::make_pair(Vertex(), true), false, Edge())), index_in_heap_map(
-                            mcb::detail::SignedIndexInHeapFunctor<Graph>(boost::num_vertices(g), index_in_heap,
+                            parmcb::detail::SignedIndexInHeapFunctor<Graph>(boost::num_vertices(g), index_in_heap,
                                     index_map)), dist_map(
-                            mcb::detail::SignedDistanceFunctor<Graph, WeightMap>(boost::num_vertices(g), dist,
+                            parmcb::detail::SignedDistanceFunctor<Graph, WeightMap>(boost::num_vertices(g), dist,
                                     index_map)), pred_map(
-                            mcb::detail::SignedPredecessorFunctor<Graph>(boost::num_vertices(g), pred, index_map)), compare(), queue(
+                            parmcb::detail::SignedPredecessorFunctor<Graph>(boost::num_vertices(g), pred, index_map)), compare(), queue(
                             dist_map, index_in_heap_map, compare) {
             }
 
@@ -202,9 +202,9 @@ namespace mcb {
 
         DistanceType distance_inf = (std::numeric_limits<DistanceType>::max)();
         std::less<DistanceType> compare;
-        mcb::detail::closed_plus<DistanceType> combine = mcb::detail::closed_plus<DistanceType>();
+        parmcb::detail::closed_plus<DistanceType> combine = parmcb::detail::closed_plus<DistanceType>();
 
-        mcb::detail::search_frontier<Graph, WeightMap> frontier(g);
+        parmcb::detail::search_frontier<Graph, WeightMap> frontier(g);
         SignedVertex signed_s = std::make_pair(s, s_pos);
         SignedVertex signed_t = std::make_pair(t, t_pos);
         frontier.push_source(signed_s);
@@ -289,20 +289,20 @@ namespace mcb {
 
         DistanceType distance_inf = (std::numeric_limits<DistanceType>::max)();
         std::less<DistanceType> compare;
-        mcb::detail::closed_plus<DistanceType> combine = mcb::detail::closed_plus<DistanceType>();
+        parmcb::detail::closed_plus<DistanceType> combine = parmcb::detail::closed_plus<DistanceType>();
 
         SignedVertex signed_s = std::make_pair(s, s_pos);
-        mcb::detail::search_frontier<Graph, WeightMap> f_frontier(g);
+        parmcb::detail::search_frontier<Graph, WeightMap> f_frontier(g);
         f_frontier.push_source(signed_s);
 
         SignedVertex signed_t = std::make_pair(t, t_pos);
-        mcb::detail::search_frontier<Graph, WeightMap> b_frontier(g);
+        parmcb::detail::search_frontier<Graph, WeightMap> b_frontier(g);
         b_frontier.push_source(signed_t);
 
         assert(signed_s != signed_t);
 
-        std::reference_wrapper<mcb::detail::search_frontier<Graph, WeightMap>> frontier = std::ref(f_frontier);
-        std::reference_wrapper<mcb::detail::search_frontier<Graph, WeightMap>> other_frontier = std::ref(b_frontier);
+        std::reference_wrapper<parmcb::detail::search_frontier<Graph, WeightMap>> frontier = std::ref(f_frontier);
+        std::reference_wrapper<parmcb::detail::search_frontier<Graph, WeightMap>> other_frontier = std::ref(b_frontier);
         DistanceType best_path = distance_inf;
         bool best_path_set = false;
         SignedVertex best_path_common_vertex;
@@ -405,6 +405,6 @@ namespace mcb {
         return std::make_tuple(cycle, cycle_weight, true);
     }
 
-} // mcb
+} // parmcb
 
 #endif

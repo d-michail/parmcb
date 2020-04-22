@@ -11,8 +11,8 @@
 #include <boost/timer/timer.hpp>
 #include <boost/thread.hpp>
 
-#include <mcb/mcb.hpp>
-#include <mcb/util.hpp>
+#include <parmcb/parmcb.hpp>
+#include <parmcb/util.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
@@ -70,18 +70,18 @@ int main(int argc, char *argv[]) {
         std::cerr << "Failed to open input file." << std::endl;
         exit(EXIT_FAILURE);
     }
-    mcb::read_dimacs_from_file(fp, graph);
+    parmcb::read_dimacs_from_file(fp, graph);
     fclose(fp);
 
-    if (mcb::has_loops(graph)) {
+    if (parmcb::has_loops(graph)) {
         std::cerr << "Graph has loops, aborting.." << std::endl;
         return EXIT_FAILURE;
     }
-    if (mcb::has_multiple_edges(graph)) {
+    if (parmcb::has_multiple_edges(graph)) {
         std::cerr << "Graph has multiple edges, aborting.." << std::endl;
         return EXIT_FAILURE;
     }
-    if (mcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
+    if (parmcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
         std::cerr << "Graph has negative or zero weight edges, aborting.." << std::endl;
         return EXIT_FAILURE;
     }
@@ -105,27 +105,27 @@ int main(int argc, char *argv[]) {
     if (vm["signed"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
+            mcb_weight = parmcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                     cores);
         } else {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = mcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = parmcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     } else if (vm["fvstrees"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
             std::cout << "Using MCB_SVA_FVS_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = parmcb::mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     } else {
         if (vm["parallel"].as<bool>()) {
             std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         } else {
             std::cout << "Using MCB_SVA_ISO_TREES" << std::endl;
-            mcb_weight = mcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            mcb_weight = parmcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     }
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
             }
             std::cout << std::endl;
 
-            assert(mcb::is_cycle(graph, cycle));
+            assert(parmcb::is_cycle(graph, cycle));
         }
     }
 

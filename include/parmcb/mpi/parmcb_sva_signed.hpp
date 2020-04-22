@@ -1,5 +1,5 @@
-#ifndef MCB_SVA_SIGNED_MPI_HPP_
-#define MCB_SVA_SIGNED_MPI_HPP_
+#ifndef PARMCB_SVA_SIGNED_MPI_HPP_
+#define PARMCB_SVA_SIGNED_MPI_HPP_
 
 #include <cstddef>
 #include <functional>
@@ -21,13 +21,13 @@
 #include <tbb/tbb.h>
 #include <tbb/concurrent_vector.h>
 
-#include <mcb/detail/signed_dijkstra.hpp>
-#include <mcb/mpi/sptrees.hpp>
-#include <mcb/forestindex.hpp>
-#include <mcb/spvecgf2.hpp>
-#include <mcb/util.hpp>
+#include <parmcb/detail/signed_dijkstra.hpp>
+#include <parmcb/mpi/sptrees.hpp>
+#include <parmcb/forestindex.hpp>
+#include <parmcb/spvecgf2.hpp>
+#include <parmcb/util.hpp>
 
-namespace mcb {
+namespace parmcb {
 
     namespace detail {
 
@@ -250,7 +250,7 @@ namespace mcb {
 
             std::set<Edge> signed_edges;
             convert_edges(support[k], std::inserter(signed_edges, signed_edges.end()), forest_index);
-            std::tuple<std::set<Edge>, WeightType, bool> best = mcb::detail::find_shortest_odd_cycle_mpi(g, weight_map,
+            std::tuple<std::set<Edge>, WeightType, bool> best = parmcb::detail::find_shortest_odd_cycle_mpi(g, weight_map,
                     vertices, forest_index, signed_edges, world);
 
             if (world.rank() == 0) {
@@ -287,6 +287,6 @@ namespace mcb {
         return mcb_weight;
     }
 
-} // namespace mcb
+} // namespace parmcb
 
 #endif

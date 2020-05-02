@@ -17,8 +17,8 @@ If you use this package please consider citing the following paper:
 - K. Mehlhorn and D. Michail.
    **Implementing Minimum Cycle Basis Algorithms.**
    ACM Journal of Experimental Algorithmics, 11(2):1-14, 2006.
-   <i class="far fa-file-pdf"></i> [pdf](/assets/papers/implMCBjournal.pdf),
-   <i class="fas fa-link"></i> [web](http://portal.acm.org/citation.cfm?id=1187436.1216582)
+   <i class="far fa-file-pdf"></i> [pdf](https://d-michail.github.io/assets/papers/implMCBjournal.pdf),
+   <i class="fas fa-link"></i> [web](https://portal.acm.org/citation.cfm?id=1187436.1216582)
 
 Citing software is just as important as citing any other important sources in your research.
 If you’re not sure whether or not to cite something, [Shouldacite](http://bit.ly/shouldacite) can help
@@ -26,8 +26,25 @@ you decide if you should.
 
 ## Algorithms
 
- * TODO
- * TODO
+The following functions are available which implement different algorithmic variants. All of them use a technique
+called _support vector approach_ in order to establish 
+linear independence. There main differences are how they
+compute the actual cycles.
+
+- signed graph 
+   * `mcb_sva_signed`, 
+   * `mcb_sva_signed_tbb`  
+   * `mcb_sva_signed_mpi`
+- cycles collection from a feedback vertex set 
+   * `mcb_sva_fvs_trees`
+   * `mcb_sva_fvs_trees_tbb`
+   * `mcb_sva_fvs_trees_mpi`
+   * `mcb_sva_fvs_trees_tbb_mpi`
+- isometric cycles collection
+   * `mcb_sva_iso_trees`
+   * `mcb_sva_iso_trees_tbb`
+   * `mcb_sva_iso_trees_mpi`
+   * `mcb_sva_iso_trees_tbb_mpi`
 
 Two demos programs are included which read a graph in DIMACS format and compute a minimum cycle basis.
 

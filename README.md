@@ -32,7 +32,7 @@ linear independence. There main differences are how they
 compute the actual cycles.
 
 - signed graph 
-   * `mcb_sva_signed`, 
+   * `mcb_sva_signed`
    * `mcb_sva_signed_tbb`  
    * `mcb_sva_signed_mpi`
 - cycles collection from a feedback vertex set 

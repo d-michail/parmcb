@@ -12,7 +12,7 @@ be found at https://github.com/d-michail/mcb.
 
 ## Cite
 
-If you use this package please consider citing the following paper:
+If you use this package please cite the following paper:
 
 - K. Mehlhorn and D. Michail.
    **Implementing Minimum Cycle Basis Algorithms.**

@@ -1,6 +1,11 @@
 #ifndef PARMCB_SVA_SIGNED_HPP_
 #define PARMCB_SVA_SIGNED_HPP_
 
+//    Copyright (C) Dimitrios Michail 2019 - 2020.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          https://www.boost.org/LICENSE_1_0.txt)
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>

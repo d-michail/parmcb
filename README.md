@@ -1,20 +1,46 @@
 
 # Parallel Minimum Cycle Basis Library
 
-This project implements algorithms to compute exact and approximate Minimum Cycle Bases of weighted graphs. 
+This project implements algorithms to compute exact and approximate *Minimum Cycle Bases* of weighted graphs. 
 The library is written in C++-14 using the [Boost Graph](https://www.boost.org/) libraries for the underlying
 graph implementation. It supports parallel and distributed execution using the
-[TBB (Intel Threading Building Blocks)](https://software.intel.com/en-us/tbb) library and MPI.
+[TBB (Intel Threading Building Blocks)](https://software.intel.com/en-us/tbb) library
+and [MPI](https://www.mpi-forum.org/).
 
 An older package containing several sequential minimum cycle basis algorithms, using the LEDA library, can 
 be found at https://github.com/d-michail/mcb.
 
-# Develop
+## Cite
+
+If you use this package please consider citing the following paper:
+
+- K. Mehlhorn and D. Michail.
+   **Implementing Minimum Cycle Basis Algorithms.**
+   ACM Journal of Experimental Algorithmics, 11(2):1-14, 2006.
+   <i class="far fa-file-pdf"></i> [pdf](/assets/papers/implMCBjournal.pdf),
+   <i class="fas fa-link"></i> [web](http://portal.acm.org/citation.cfm?id=1187436.1216582)
+
+Citing software is just as important as citing any other important sources in your research.
+If you’re not sure whether or not to cite something, [Shouldacite](http://bit.ly/shouldacite) can help
+you decide if you should.
+
+## Algorithms
+
+ * TODO
+ * TODO
+
+Two demos programs are included which read a graph in DIMACS format and compute a minimum cycle basis.
+
+## Example Execution
+
+TODO
+
+## Develop
 
 In order to build the library you need to have CMake installed. A C++-14 compiler is required, such as 
 GCC or Clang.
 
-## Using Eclipse
+### Using Eclipse
 
 Assume the source file is downloaded in a folder called `parmcb`. Create a 
 folder called `parmcb-build` parallel to the `parmcb` folder. This works best 
@@ -30,7 +56,7 @@ in order to build using debugging symbols.
 
 Open up Eclipse and import an existing project into the workspace.
 
-## Using Clang
+### Using Clang
 
 Use 
 
@@ -38,7 +64,7 @@ Use
 CC=/usr/bin/clang CXX=/usr/bin/clang++ cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
 
-# Custom TBB location 
+### Custom TBB location 
 
 See the following [guide](https://software.intel.com/en-us/articles/installing-intel-free-libs-and-python-apt-repo) 
 on how to install TBB in Ubuntu based systems.
@@ -49,7 +75,7 @@ If cmake fails to locate TBB, try something like
 TBBROOT=/apps/compilers/intel/19.0.1/tbb cmake ../parmcb/
 ```
 
-## Linker errors
+### Linker errors
 
 If you are experiencing any linker errors with the boost libraries, then you boost libraries
 might have been compiled with an older ABI. In that case a possible workaround is to use 

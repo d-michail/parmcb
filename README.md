@@ -27,8 +27,7 @@ you decide if you should.
 ## Algorithms
 
 The following functions are available which implement different algorithmic variants. All of them use a technique
-called _support vector approach_ in order to establish 
-linear independence. There main differences are how they
+called _support vector approach_ in order to establish linear independence. Their main differences are how they
 compute the actual cycles.
 
 - signed graph 
@@ -59,9 +58,8 @@ GCC or Clang.
 
 ### Using Eclipse
 
-Assume the source file is downloaded in a folder called `parmcb`. Create a 
-folder called `parmcb-build` parallel to the `parmcb` folder. This works best 
-when using Eclipse. 
+Assume the source file is downloaded in a folder called `parmcb`. Create a folder called `parmcb-build`
+parallel to the `parmcb` folder. This works best when using Eclipse. 
 
 Switch to your new folder `parmcb-build` and issue 
 
@@ -69,8 +67,7 @@ Switch to your new folder `parmcb-build` and issue
 cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug
 ```
 
-in order to build using debugging symbols. 
-
+in order to build using debugging symbols. Use Release if no debugging symbols are required.
 Open up Eclipse and import an existing project into the workspace.
 
 ### Using Clang

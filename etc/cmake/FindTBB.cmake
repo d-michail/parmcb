@@ -164,9 +164,9 @@ if(NOT TBB_FOUND)
     #       <arch>/gcc4.1. For now, assume that the compiler is more recent than
     #       gcc 4.4.x or later.
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-      set(TBB_LIB_PATH_SUFFIX "lib/intel64/gcc4.4")
+      set(TBB_LIB_PATH_SUFFIX "lib/intel64/gcc4.4" "lib/intel64/gcc4.7" "lib/intel64/gcc4.8")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^i.86$")
-      set(TBB_LIB_PATH_SUFFIX "lib/ia32/gcc4.4")
+      set(TBB_LIB_PATH_SUFFIX "lib/ia32/gcc4.4" "lib/ia32/gcc4.7" "lib/ia32/gcc4.8")
     endif()
   endif()
   
@@ -194,18 +194,20 @@ if(NOT TBB_FOUND)
     set(TBB_VERSION "${TBB_VERSION_MAJOR}.${TBB_VERSION_MINOR}")
   endif()
 
+
+
   ##################################
   # Find TBB components
   ##################################
 
   if(TBB_VERSION VERSION_LESS 4.3)
-    set(TBB_SEARCH_COMPOMPONENTS tbb_preview tbbmalloc tbb)
+    set(TBB_SEARCH_COMPONENTS tbb_preview tbbmalloc tbb)
   else()
-    set(TBB_SEARCH_COMPOMPONENTS tbb_preview tbbmalloc_proxy tbbmalloc tbb)
+    set(TBB_SEARCH_COMPONENTS tbb_preview tbbmalloc_proxy tbbmalloc tbb)
   endif()
 
   # Find each component
-  foreach(_comp ${TBB_SEARCH_COMPOMPONENTS})
+  foreach(_comp ${TBB_SEARCH_COMPONENTS})
     if(";${TBB_FIND_COMPONENTS};tbb;" MATCHES ";${_comp};")
 
       # Search for the libraries

@@ -23,8 +23,9 @@
 #include <boost/mpi/collectives.hpp>
 #include <boost/mpi/timer.hpp>
 
-#include <tbb/tbb.h>
 #include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 
 #include <parmcb/detail/signed_dijkstra.hpp>
 #include <parmcb/mpi/sptrees.hpp>

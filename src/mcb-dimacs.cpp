@@ -136,20 +136,21 @@ int main(int argc, char *argv[]) {
 
     timer.stop();
 
+    std::cout << "MCB weight = " << mcb_weight << std::endl;
+
     if (vm["printcycles"].as<bool>()) {
+        std::cout << "MCB cycles" << std::endl;
         for (auto it = cycles.begin(); it != cycles.end(); it++) {
             auto cycle = *it;
 
             for (auto eit = cycle.begin(); eit != cycle.end(); eit++) {
-                std::cout << " " << *eit;
+                std::cout << *eit << " ";
             }
             std::cout << std::endl;
 
             assert(parmcb::is_cycle(graph, cycle));
         }
     }
-
-    std::cout << "weight = " << mcb_weight << std::endl;
 
     if (vm["verbose"].as<bool>()) {
         std::cout << "time:" << timer.format();

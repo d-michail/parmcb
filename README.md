@@ -26,9 +26,11 @@ you decide if you should.
 
 ## Algorithms
 
+### Undirected Graphs
+
 The following functions are available which implement different algorithmic variants. All of them use a technique
 called _support vector approach_ in order to establish linear independence. Their main differences are how they
-compute the actual cycles.
+compute the actual cycles. 
 
 - signed graph 
    * `mcb_sva_signed`
@@ -44,6 +46,10 @@ compute the actual cycles.
    * `mcb_sva_iso_trees_tbb`
    * `mcb_sva_iso_trees_mpi`
    * `mcb_sva_iso_trees_tbb_mpi`
+
+All these different implementations support weighted undirected graphs which (a) do not contain self-loops, 
+(b) do not contain multiple edges, and (c) all edge weights are positive. If your graph has self-loops, 
+multiple edges or zero weight edges, you need to handle those in a preprocessing step.
 
 Two demos programs are included which read a graph in DIMACS format and compute a minimum cycle basis.
 
@@ -99,7 +105,6 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 ```
 
 in the `CMakeLists.txt` file.
-
 
 
 

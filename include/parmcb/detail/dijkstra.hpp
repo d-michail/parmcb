@@ -1,5 +1,5 @@
-#ifndef PARMCB_DIJKSTRA_HPP_
-#define PARMCB_DIJKSTRA_HPP_
+#ifndef PARMCB_DETAIL_DIJKSTRA_HPP_
+#define PARMCB_DETAIL_DIJKSTRA_HPP_
 
 //    Copyright (C) Dimitrios Michail 2019 - 2020.
 // Distributed under the Boost Software License, Version 1.0.

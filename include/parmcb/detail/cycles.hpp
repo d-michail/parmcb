@@ -138,7 +138,6 @@ namespace parmcb {
                     if (x == u) {
                         boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]], e)],
                                 cycles_g);
-                        //std::cout << "TODO: 1 (v,e)" << std::endl;
                     } else {
                         auto xprime = tree_x.first(u);
                         parmcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
@@ -148,7 +147,6 @@ namespace parmcb {
                         if (x == first_xprime_v) {
                             boost::add_edge(*alli,
                                     cycle_to_vertex[std::make_pair(trees_index_map[index_map[xprime]], e)], cycles_g);
-                            //std::cout << "TODO: 2a is (x',e)" << std::endl;
                         } else {
                             parmcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[index_map[v]]];
                             auto first_v_xprime = tree_v.first(xprime);
@@ -156,10 +154,8 @@ namespace parmcb {
                                 boost::add_edge(*alli,
                                         cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]],
                                                 tree_x.node(xprime)->pred())], cycles_g);
-                                //std::cout << "TODO: 2b (v,xx')" << std::endl;
                             } else {
                                 boost::put(bad_map, *alli, true);
-                                //std::cout << "TODO: 2c (not isometric)" << std::endl;
                             }
                         }
                     }

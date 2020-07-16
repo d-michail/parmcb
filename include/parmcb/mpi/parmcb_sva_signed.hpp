@@ -1,5 +1,5 @@
-#ifndef PARMCB_SVA_SIGNED_MPI_HPP_
-#define PARMCB_SVA_SIGNED_MPI_HPP_
+#ifndef PARMCB_MPI_SVA_SIGNED_HPP_
+#define PARMCB_MPI_SVA_SIGNED_HPP_
 
 //    Copyright (C) Dimitrios Michail 2019 - 2020.
 // Distributed under the Boost Software License, Version 1.0.
@@ -197,8 +197,7 @@ namespace parmcb {
             return best;
         }
 
-    }
-// detail
+    } // detail
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_mpi(const Graph &g, WeightMap weight_map,

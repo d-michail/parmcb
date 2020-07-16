@@ -85,31 +85,24 @@ target_link_libraries(mcb-dimacs-mpi MPI::MPI_CXX)
 
 enable_testing()
 include(CTest)
-add_executable(test1 ${PROJECT_SOURCE_DIR}/test/test1.cpp)
-target_include_directories(test1 PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test1 PUBLIC ${Boost_INCLUDE_DIRS})
-target_link_libraries(test1 Boost::timer)
-target_include_directories(test1 PUBLIC ${TBB_INCLUDE_DIRS})
-target_compile_definitions(test1 PUBLIC ${TBB_DEFINITIONS})
-target_link_libraries(test1 ${TBB_LIBRARIES})
-add_test(NAME test1 COMMAND test1)
+set(
+    TEST_SOURCES
+    "test_forest_index.cpp"
+    "test_fvs.cpp"
+    "test_mcb.cpp"
+)
+foreach(testsourcefile ${TEST_SOURCES})
+    string(REPLACE ".cpp" "" testname ${testsourcefile})
+    add_executable(${testname} ${PROJECT_SOURCE_DIR}/test/${testsourcefile})
+    target_include_directories(${testname} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+    target_include_directories(${testname} PUBLIC ${Boost_INCLUDE_DIRS})
+    target_link_libraries(${testname} Boost::timer)
+    target_include_directories(${testname} PUBLIC ${TBB_INCLUDE_DIRS})
+    target_compile_definitions(${testname} PUBLIC ${TBB_DEFINITIONS})
+    target_link_libraries(${testname} ${TBB_LIBRARIES})
+    add_test(NAME ${testname} COMMAND ${testname})
+endforeach(testsourcefile ${TEST_SOURCES})
 
-add_executable(test2 ${PROJECT_SOURCE_DIR}/test/test2.cpp)
-target_include_directories(test2 PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test2 PUBLIC ${Boost_INCLUDE_DIR})
-target_link_libraries(test2 Boost::timer)
-target_include_directories(test2 PUBLIC ${TBB_INCLUDE_DIRS})
-target_compile_definitions(test2 PUBLIC ${TBB_DEFINITIONS})
-target_link_libraries(test2 ${TBB_LIBRARIES})
-add_test(NAME test2 COMMAND test2)
-
-add_executable(test_fvs ${PROJECT_SOURCE_DIR}/test/test_fvs.cpp)
-target_include_directories(test_fvs PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test_fvs PUBLIC ${Boost_INCLUDE_DIRS})
-target_include_directories(test_fvs PUBLIC ${TBB_INCLUDE_DIRS})
-target_compile_definitions(test_fvs PUBLIC ${TBB_DEFINITIONS})
-target_link_libraries(test_fvs ${TBB_LIBRARIES})
-add_test(NAME test_fvs COMMAND test_fvs)
 
 install(TARGETS parmcb mcb-dimacs mcb-dimacs-mpi
         RUNTIME DESTINATION bin

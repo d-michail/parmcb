@@ -70,10 +70,10 @@ parallel to the `parmcb` folder. This works best when using Eclipse.
 Switch to your new folder `parmcb-build` and issue 
 
 ```
-cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug
+cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
 
-in order to build using debugging symbols. Use Release if no debugging symbols are required.
+in order to build without debugging symbols. Use Debug if debugging symbols are required.
 Open up Eclipse and import an existing project into the workspace.
 
 ### Using Clang
@@ -106,6 +106,21 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 in the `CMakeLists.txt` file.
 
-
-
 Happy coding!
+
+## License 
+
+The library may be used under the terms of the [Boost Software License, Version 1.0](https://www.boost.org/LICENSE_1_0.txt). 
+Please note that the library is distributed WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.
+
+Please refer to the license for details.
+
+SPDX-License-Identifier: BSL-1.0
+
+## Author
+
+(C) Copyright 2019-2021, by Dimitrios Michail
+
+
+

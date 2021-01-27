@@ -188,8 +188,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "graph vertices: " << num_vertices(graph) << std::endl;
-    std::cout << "graph edges: " << num_edges(graph) << std::endl;
+    std::cout << "graph n: " << num_vertices(graph) << std::endl;
+    std::cout << "graph m: " << num_edges(graph) << std::endl;
+    std::cout << "graph n*m: " << num_vertices(graph)*num_edges(graph) << std::endl;
     std::cout << std::flush;
 
     print_all_tree_stats(graph, get(boost::edge_weight, graph));

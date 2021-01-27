@@ -219,7 +219,7 @@ namespace parmcb {
         parmcb::detail::OddCycleFinder<Graph, WeightMap> odd_cycle_finder(g, weight_map, forest_index, vertices);
         for (std::size_t k = 0; k < csd; k++) {
             if (k % 250 == 0) {
-                std::cout << k << std::endl;
+                std::cout << "iteration = " << k << std::endl;
             }
 
             /*

@@ -101,6 +101,9 @@ int main(int argc, char *argv[]) {
     if (cores == 0) {
         cores = boost::thread::hardware_concurrency();
     }
+    if (vm["verbose"].as<bool>() && vm["parallel"].as<bool>()) {
+        std::cout << "Using cores: " << cores << std::endl;
+    }
 
     boost::timer::cpu_timer timer;
 

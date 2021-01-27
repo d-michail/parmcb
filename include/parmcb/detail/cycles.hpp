@@ -35,6 +35,26 @@ namespace parmcb {
     namespace detail {
 
         template<class Graph, class WeightMap>
+        struct HortonCyclesBuilder {
+
+            void operator()(const Graph &g, const WeightMap &weight_map,
+                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
+                typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
+                VertexIt vi, viend;
+                for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
+                    auto v = *vi;
+                    trees.emplace_back(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v);
+                }
+                for (auto &tree : trees) {
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+                }
+            }
+
+        };
+
+        template<class Graph, class WeightMap>
         struct FVSCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,

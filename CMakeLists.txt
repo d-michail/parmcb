@@ -68,6 +68,7 @@ install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/parmcb)
 set(
     DEMO_SOURCES
     "mcb-dimacs.cpp"
+    "collection-stats-dimacs.cpp"
 )
 foreach(demosourcefile ${DEMO_SOURCES})
     string(REPLACE ".cpp" "" demoname ${demosourcefile})

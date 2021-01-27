@@ -28,8 +28,7 @@ int main(int argc, char *argv[]) {
 
     po::variables_map vm;
     try {
-        po::options_description desc(
-                "Computes the minimum cycle basis of a weighted undirected graph given in DIMACS format");
+        po::options_description desc(USAGE);
         // @formatter:off
         desc.add_options()
                 ("help,h", "Help")

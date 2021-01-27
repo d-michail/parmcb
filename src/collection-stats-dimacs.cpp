@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) {
     }
 
     typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > graph_t;
-    //typedef graph_traits<graph_t>::edge_descriptor edge_descriptor;
 
     // create graph
     graph_t graph;

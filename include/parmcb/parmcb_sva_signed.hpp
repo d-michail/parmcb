@@ -144,8 +144,8 @@ namespace parmcb {
             mcb_weight += std::get<1>(best);
         }
 
-        std::cout << "cycle   timer" << cycle_timer.format();
-        std::cout << "support timer" << support_timer.format();
+//        std::cout << "cycle   timer" << cycle_timer.format();
+//        std::cout << "support timer" << support_timer.format();
 
         return mcb_weight;
     }

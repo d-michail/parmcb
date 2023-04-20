@@ -1,1 +1,1 @@
-install(FILES cycles.hpp dijkstra.hpp fvs.hpp lex_dijkstra.hpp signed_dijkstra.hpp spanning_forest.hpp util.hpp DESTINATION include/parmcb/detail)
+install(FILES cycles.hpp dijkstra.hpp bfs.hpp fvs.hpp lex_dijkstra.hpp signed_dijkstra.hpp spanning_forest.hpp util.hpp approx_spanner.hpp DESTINATION include/parmcb/detail)

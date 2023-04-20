@@ -47,6 +47,21 @@ compute the actual cycles.
    * `mcb_sva_iso_trees_mpi`
    * `mcb_sva_iso_trees_tbb_mpi`
 
+### Undirected Graphs (approximation algorithms)
+
+A (2k-1)-approximate algorithm for any integer k >= 1. 
+
+- signed graph
+  * `approx_mcb_sva_signed`
+- cycles collection from a feedback vertex set 
+  * `approx_mcb_sva_fvs_trees`
+- isometric cycles collection
+  * `approx_mcb_sva_iso_trees`
+
+The signed graph variation `approx_mcb_sva_signed`  has time complexity equal to  
+O( m n^{1+1/k} + min(m^3 + m n^2 \log n, n^{3+3/k}) ).
+
+
 All these different implementations support weighted undirected graphs which (a) do not contain self-loops, 
 (b) do not contain multiple edges, and (c) all edge weights are positive. If your graph has self-loops, 
 multiple edges or zero weight edges, you need to handle those in a preprocessing step.
@@ -95,6 +110,13 @@ If cmake fails to locate TBB, try something like
 TBBROOT=/apps/compilers/intel/19.0.1/tbb cmake ../parmcb/
 ```
 
+or 
+
+```
+TBBROOT=/opt/intel/oneapi/tbb/2021.9.0 cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+```
+
+
 ### Linker errors
 
 If you are experiencing any linker errors with the boost libraries, then you boost libraries
@@ -120,7 +142,7 @@ SPDX-License-Identifier: BSL-1.0
 
 ## Author
 
-(C) Copyright 2019-2021, by Dimitrios Michail
+(C) Copyright 2019-2023, by Dimitrios Michail
 
 
 

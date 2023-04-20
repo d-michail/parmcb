@@ -52,7 +52,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 add_subdirectory(include/parmcb)
 add_subdirectory(include/parmcb/detail)
 add_subdirectory(include/parmcb/mpi)
-include_directories(${PROJECT_SOURCE_DIR}/include)
+set(GENERATED_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/parmcb)
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+
 set(PARMCB_HAVE_BOOST ${Boost_FOUND})
 set(PARMCB_HAVE_TBB ${TBB_FOUND})
 set(PARMCB_HAVE_MPI ${MPI_FOUND})
@@ -62,8 +64,9 @@ set(PARMCB_HAVE_MPI ${MPI_FOUND})
 
 add_library(parmcb INTERFACE)
 target_include_directories(parmcb INTERFACE ${PROJECT_SOURCE_DIR}/include/)
-configure_file(include/parmcb/config.hpp.in config.hpp)
-install(FILES ${PROJECT_BINARY_DIR}/config.hpp DESTINATION include/parmcb)
+configure_file(${PROJECT_SOURCE_DIR}/include/parmcb/config.hpp.in ${GENERATED_INCLUDE_DIR}/config.hpp)
+
+install(FILES ${GENERATED_INCLUDE_DIR}/config.hpp DESTINATION include/parmcb)
 
 set(
     DEMO_SOURCES
@@ -81,22 +84,24 @@ foreach(demosourcefile ${DEMO_SOURCES})
     target_link_libraries(${demoname} ${TBB_LIBRARIES})
 endforeach(demosourcefile ${DEMO_SOURCES})
 
-set(
-    DEMO_MPI_SOURCES
-    "mcb-dimacs-mpi.cpp"
-)
-foreach(demosourcefile ${DEMO_MPI_SOURCES})
-    string(REPLACE ".cpp" "" demoname ${demosourcefile})
-    add_executable(${demoname} ${PROJECT_SOURCE_DIR}/src/${demosourcefile})
-    target_include_directories(${demoname} PUBLIC ${PROJECT_SOURCE_DIR}/include)
-    target_include_directories(${demoname} PUBLIC ${Boost_INCLUDE_DIRS})
-    target_link_libraries(${demoname} Boost::timer Boost::program_options Boost::thread Boost::mpi)
-    target_include_directories(${demoname} PUBLIC ${TBB_INCLUDE_DIRS})
-    target_compile_definitions(${demoname} PUBLIC ${TBB_DEFINITIONS})
-    target_link_libraries(${demoname} ${TBB_LIBRARIES})
-    target_include_directories(${demoname} PUBLIC ${MPI_C_INCLUDE_PATH})
-    target_link_libraries(${demoname} MPI::MPI_CXX)
-endforeach(demosourcefile ${DEMO_MPI_SOURCES})
+if (PARMCB_HAVE_TBB AND PARMCB_HAVE_MPI)
+    set(
+        DEMO_MPI_SOURCES
+        "mcb-dimacs-mpi.cpp"
+    )
+    foreach(demosourcefile ${DEMO_MPI_SOURCES})
+        string(REPLACE ".cpp" "" demoname ${demosourcefile})
+        add_executable(${demoname} ${PROJECT_SOURCE_DIR}/src/${demosourcefile})
+        target_include_directories(${demoname} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+        target_include_directories(${demoname} PUBLIC ${Boost_INCLUDE_DIRS})
+        target_link_libraries(${demoname} Boost::timer Boost::program_options Boost::thread Boost::mpi)
+        target_include_directories(${demoname} PUBLIC ${TBB_INCLUDE_DIRS})
+        target_compile_definitions(${demoname} PUBLIC ${TBB_DEFINITIONS})
+        target_link_libraries(${demoname} ${TBB_LIBRARIES})
+        target_include_directories(${demoname} PUBLIC ${MPI_C_INCLUDE_PATH})
+        target_link_libraries(${demoname} MPI::MPI_CXX)
+    endforeach(demosourcefile ${DEMO_MPI_SOURCES})
+endif()
 
 
 enable_testing()
@@ -106,6 +111,7 @@ set(
     "test_forest_index.cpp"
     "test_fvs.cpp"
     "test_mcb.cpp"
+    "test_approx_mcb.cpp"
 )
 foreach(testsourcefile ${TEST_SOURCES})
     string(REPLACE ".cpp" "" testname ${testsourcefile})
@@ -119,8 +125,13 @@ foreach(testsourcefile ${TEST_SOURCES})
     add_test(NAME ${testname} COMMAND ${testname})
 endforeach(testsourcefile ${TEST_SOURCES})
 
+if(PARMCB_HAVE_TBB AND PARMCB_HAVE_MPI)
+   set(INSTALL_TARGETS "parmcb" "mcb-dimacs" "mcb-dimacs-mpi")
+else()
+   set(INSTALL_TARGETS "parmcb" "mcb-dimacs")
+endif()
 
-install(TARGETS parmcb mcb-dimacs mcb-dimacs-mpi
+install(TARGETS ${INSTALL_TARGETS}
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
         )

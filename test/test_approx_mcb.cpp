@@ -11,10 +11,12 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <parmcb/parmcb.hpp>
 #include <parmcb/util.hpp>
+#include <parmcb/parmcb_approx_sva_signed.hpp>
+#include <parmcb/parmcb_approx_sva_trees.hpp>
 
 using namespace boost;
+
 typedef adjacency_list<vecS, vecS, undirectedS, no_property, property<edge_weight_t, double> > Graph;
 typedef graph_traits<Graph>::edge_descriptor Edge;
 
@@ -44,26 +46,32 @@ void create_graph(Graph& graph) {
     weight[e01] = 1.0;
     auto e12 = add_edge(v1, v2, graph).first;
     weight[e12] = 1.0;
+    auto e1_4 = add_edge(v1, v4, graph).first;
+    weight[e1_4] = 1.0;
     auto e23 = add_edge(v2, v3, graph).first;
     weight[e23] = 100.0;
     auto e34 = add_edge(v3, v4, graph).first;
     weight[e34] = 1.0;
     auto e45 = add_edge(v4, v5, graph).first;
     weight[e45] = 1.0;
-    auto e05 = add_edge(v0, v5, graph).first;
-    weight[e05] = 1.0;
+    auto e0_5 = add_edge(v0, v5, graph).first;
+    weight[e0_5] = 50.0;
     auto e56 = add_edge(v5, v6, graph).first;
     weight[e56] = 1.0;
     auto e27 = add_edge(v2, v7, graph).first;
     weight[e27] = 2.0;
+    auto e7_8 = add_edge(v7, v8, graph).first;
+    weight[e7_8] = 1.0;
     auto e79 = add_edge(v7, v9, graph).first;
     weight[e79] = 1.0;
     auto e38 = add_edge(v3, v8, graph).first;
     weight[e38] = 5.0;
+    auto e3_12 = add_edge(v3, v12, graph).first;
+    weight[e3_12] = 1.0;
     auto e108 = add_edge(v10, v8, graph).first;
     weight[e108] = 1.0;
-    auto e109 = add_edge(v10, v9, graph).first;
-    weight[e109] = 1.0;
+    auto e10_9 = add_edge(v10, v9, graph).first;
+    weight[e10_9] = 50.0;
     auto e1112 = add_edge(v11, v12, graph).first;
     weight[e1112] = 3.0;
     auto e12_13 = add_edge(v12, v13, graph).first;
@@ -76,200 +84,126 @@ void create_graph(Graph& graph) {
     weight[e12_15] = 1.0;
 }
 
-TEST_CASE("sequential sva signed"){
+
+TEST_CASE("approx_mcb_sva_signed"){
     Graph graph;
     create_graph(graph);
     property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
 
     CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
+    CHECK(num_edges(graph) == 20);
 
     //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
+    //   0 -- 1 --  2 -- 7 -- 9
+    //   |    |     |    |    |
+    //   5 -- 4 --  3 -- 8 -- 10
+    //   |          |
     //   6    11 -- 12 -- 13
     //              |      |
     //  16          15 --  14
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_signed(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::approx_mcb_sva_signed(graph, weight, 3, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
         CHECK(parmcb::is_cycle(graph, cycle));
     }
 
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
+    // DEBUG
+    std::for_each(cycles.begin(), cycles.end(),
+            [](const std::list<Edge> &cycle) {
+                std::for_each(cycle.begin(), cycle.end(),
+                        [](const Edge &e) {
+                            std::cout << e;
+                        });
+                std::cout << std::endl;
+            });
 
+
+    CHECK(cycles.size() == 5);
+    CHECK(mcb_weight == 224.0);
 }
 
-#ifdef PARMCB_HAVE_TBB
-TEST_CASE("parallel sva signed"){
-
+TEST_CASE("approx_mcb_sva_fvs_trees"){
     Graph graph;
     create_graph(graph);
     property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
 
     CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
+    CHECK(num_edges(graph) == 20);
 
     //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
+    //   0 -- 1 --  2 -- 7 -- 9
+    //   |    |     |    |    |
+    //   5 -- 4 --  3 -- 8 -- 10
+    //   |          |
     //   6    11 -- 12 -- 13
     //              |      |
     //  16          15 --  14
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_signed_tbb(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::approx_mcb_sva_fvs_trees(graph, weight, 3, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
         CHECK(parmcb::is_cycle(graph, cycle));
     }
 
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
+    // DEBUG
+    std::for_each(cycles.begin(), cycles.end(),
+            [](const std::list<Edge> &cycle) {
+                std::for_each(cycle.begin(), cycle.end(),
+                        [](const Edge &e) {
+                            std::cout << e;
+                        });
+                std::cout << std::endl;
+            });
 
+
+    CHECK(cycles.size() == 5);
+    CHECK(mcb_weight == 224.0);
 }
-#endif
 
-TEST_CASE("sequential sva fvs trees"){
-
+TEST_CASE("approx_mcb_sva_iso_trees"){
     Graph graph;
     create_graph(graph);
     property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
 
     CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
+    CHECK(num_edges(graph) == 20);
 
     //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
+    //   0 -- 1 --  2 -- 7 -- 9
+    //   |    |     |    |    |
+    //   5 -- 4 --  3 -- 8 -- 10
+    //   |          |
     //   6    11 -- 12 -- 13
     //              |      |
     //  16          15 --  14
     //
 
     std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_fvs_trees(graph, weight, std::back_inserter(cycles));
+    double mcb_weight = parmcb::approx_mcb_sva_iso_trees(graph, weight, 3, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;
         CHECK(parmcb::is_cycle(graph, cycle));
     }
 
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
+    // DEBUG
+    std::for_each(cycles.begin(), cycles.end(),
+            [](const std::list<Edge> &cycle) {
+                std::for_each(cycle.begin(), cycle.end(),
+                        [](const Edge &e) {
+                            std::cout << e;
+                        });
+                std::cout << std::endl;
+            });
 
+
+    CHECK(cycles.size() == 5);
+    CHECK(mcb_weight == 224.0);
 }
-
-#ifdef PARMCB_HAVE_TBB
-TEST_CASE("parallel sva fvs trees"){
-
-    Graph graph;
-    create_graph(graph);
-    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
-
-    CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
-
-    //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
-    //   6    11 -- 12 -- 13
-    //              |      |
-    //  16          15 --  14
-    //
-
-    std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, weight, std::back_inserter(cycles));
-
-    for (auto it = cycles.begin(); it != cycles.end(); it++) {
-        auto cycle = *it;
-        CHECK(parmcb::is_cycle(graph, cycle));
-    }
-
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
-
-}
-#endif
-
-TEST_CASE("sequential sva iso trees"){
-
-    Graph graph;
-    create_graph(graph);
-    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
-
-    CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
-
-    //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
-    //   6    11 -- 12 -- 13
-    //              |      |
-    //  16          15 --  14
-    //
-
-    std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_iso_trees(graph, weight, std::back_inserter(cycles));
-
-    for (auto it = cycles.begin(); it != cycles.end(); it++) {
-        auto cycle = *it;
-        CHECK(parmcb::is_cycle(graph, cycle));
-    }
-
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
-
-}
-
-#ifdef PARMCB_HAVE_TBB
-TEST_CASE("parallel sva iso trees"){
-
-    Graph graph;
-    create_graph(graph);
-    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
-
-    CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
-
-    //
-    //   0 -- 1 -- 2 -- 7 -- 9
-    //   |         |         |
-    //   5 -- 4 -- 3 -- 8 -- 10
-    //   |
-    //   6    11 -- 12 -- 13
-    //              |      |
-    //  16          15 --  14
-    //
-
-    std::list<std::list<Edge>> cycles;
-    double mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, weight, std::back_inserter(cycles));
-
-    for (auto it = cycles.begin(); it != cycles.end(); it++) {
-        auto cycle = *it;
-        CHECK(parmcb::is_cycle(graph, cycle));
-    }
-
-    CHECK(cycles.size() == 3);
-    CHECK(mcb_weight == 124.0);
-
-}
-#endif
-

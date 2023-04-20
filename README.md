@@ -58,7 +58,8 @@ A (2k-1)-approximate algorithm for any integer k >= 1.
 - isometric cycles collection
   * `approx_mcb_sva_iso_trees`
 
-The signed graph variable has time complexity equal to  O( m n^{1+1/k} + min(m^3 + m n^2 \log n, n^{3+3/k}) ).
+The signed graph variation `approx_mcb_sva_signed`  has time complexity equal to  
+O( m n^{1+1/k} + min(m^3 + m n^2 \log n, n^{3+3/k}) ).
 
 
 All these different implementations support weighted undirected graphs which (a) do not contain self-loops, 

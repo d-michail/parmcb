@@ -27,6 +27,8 @@
 #include <stack>
 #include <functional>
 
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 
 namespace parmcb {
 

@@ -1,5 +1,5 @@
-#ifndef PARMCB_DETAIL_UBFS_HPP_
-#define PARMCB_DETAIL_UBFS_HPP_
+#ifndef PARMCB_DETAIL_BFS_HPP_
+#define PARMCB_DETAIL_BFS_HPP_
 
 //    Copyright (C) Dimitrios Michail 2019 - 2023.
 // Distributed under the Boost Software License, Version 1.0.

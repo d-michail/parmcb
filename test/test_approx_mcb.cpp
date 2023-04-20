@@ -11,9 +11,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
-#include <parmcb/parmcb.hpp>
 #include <parmcb/util.hpp>
 #include <parmcb/parmcb_approx_sva_signed.hpp>
+#include <parmcb/parmcb_approx_sva_trees.hpp>
 
 using namespace boost;
 
@@ -105,6 +105,88 @@ TEST_CASE("approx_mcb_sva_signed"){
 
     std::list<std::list<Edge>> cycles;
     double mcb_weight = parmcb::approx_mcb_sva_signed(graph, weight, 3, std::back_inserter(cycles));
+
+    for (auto it = cycles.begin(); it != cycles.end(); it++) {
+        auto cycle = *it;
+        CHECK(parmcb::is_cycle(graph, cycle));
+    }
+
+    // DEBUG
+    std::for_each(cycles.begin(), cycles.end(),
+            [](const std::list<Edge> &cycle) {
+                std::for_each(cycle.begin(), cycle.end(),
+                        [](const Edge &e) {
+                            std::cout << e;
+                        });
+                std::cout << std::endl;
+            });
+
+
+    CHECK(cycles.size() == 5);
+    CHECK(mcb_weight == 224.0);
+}
+
+TEST_CASE("approx_mcb_sva_fvs_trees"){
+    Graph graph;
+    create_graph(graph);
+    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
+
+    CHECK(num_vertices(graph) == 17);
+    CHECK(num_edges(graph) == 20);
+
+    //
+    //   0 -- 1 --  2 -- 7 -- 9
+    //   |    |     |    |    |
+    //   5 -- 4 --  3 -- 8 -- 10
+    //   |          |
+    //   6    11 -- 12 -- 13
+    //              |      |
+    //  16          15 --  14
+    //
+
+    std::list<std::list<Edge>> cycles;
+    double mcb_weight = parmcb::approx_mcb_sva_fvs_trees(graph, weight, 3, std::back_inserter(cycles));
+
+    for (auto it = cycles.begin(); it != cycles.end(); it++) {
+        auto cycle = *it;
+        CHECK(parmcb::is_cycle(graph, cycle));
+    }
+
+    // DEBUG
+    std::for_each(cycles.begin(), cycles.end(),
+            [](const std::list<Edge> &cycle) {
+                std::for_each(cycle.begin(), cycle.end(),
+                        [](const Edge &e) {
+                            std::cout << e;
+                        });
+                std::cout << std::endl;
+            });
+
+
+    CHECK(cycles.size() == 5);
+    CHECK(mcb_weight == 224.0);
+}
+
+TEST_CASE("approx_mcb_sva_iso_trees"){
+    Graph graph;
+    create_graph(graph);
+    property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
+
+    CHECK(num_vertices(graph) == 17);
+    CHECK(num_edges(graph) == 20);
+
+    //
+    //   0 -- 1 --  2 -- 7 -- 9
+    //   |    |     |    |    |
+    //   5 -- 4 --  3 -- 8 -- 10
+    //   |          |
+    //   6    11 -- 12 -- 13
+    //              |      |
+    //  16          15 --  14
+    //
+
+    std::list<std::list<Edge>> cycles;
+    double mcb_weight = parmcb::approx_mcb_sva_iso_trees(graph, weight, 3, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
         auto cycle = *it;

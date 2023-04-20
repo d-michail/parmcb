@@ -3,5 +3,10 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <parmcb/config.hpp>
+
+#ifdef PARMCB_HAVE_TBB
 #include <parmcb/mpi/parmcb_sva_signed.hpp>
+#endif
+
 #include <parmcb/mpi/parmcb_sva_trees.hpp>

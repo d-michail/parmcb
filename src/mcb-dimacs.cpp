@@ -16,6 +16,7 @@
 #include <boost/timer/timer.hpp>
 #include <boost/thread.hpp>
 
+#include <parmcb/config.hpp>
 #include <parmcb/parmcb.hpp>
 #include <parmcb/util.hpp>
 
@@ -111,25 +112,37 @@ int main(int argc, char *argv[]) {
     double mcb_weight;
     if (vm["signed"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
+#ifdef PARMCB_HAVE_TBB
             std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
             mcb_weight = parmcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                     cores);
+#else
+            std::cerr << "TBB not supported, bailing out." << std::endl;
+#endif
         } else {
             std::cout << "Using MCB_SVA_SIGNED" << std::endl;
             mcb_weight = parmcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     } else if (vm["fvstrees"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
+#ifdef PARMCB_HAVE_TBB
             std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
             mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+#else
+            std::cerr << "TBB not supported, bailing out." << std::endl;
+#endif
         } else {
             std::cout << "Using MCB_SVA_FVS_TREES" << std::endl;
             mcb_weight = parmcb::mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
         }
     } else {
         if (vm["parallel"].as<bool>()) {
+#ifdef PARMCB_HAVE_TBB
             std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
             mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+#else
+            std::cerr << "TBB not supported, bailing out." << std::endl;
+#endif
         } else {
             std::cout << "Using MCB_SVA_ISO_TREES" << std::endl;
             mcb_weight = parmcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));

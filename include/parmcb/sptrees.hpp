@@ -17,6 +17,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/serialization/vector.hpp>
 
+#include <parmcb/config.hpp>
 #include <parmcb/detail/lex_dijkstra.hpp>
 #include <parmcb/detail/util.hpp>
 
@@ -27,8 +28,10 @@
 #include <stack>
 #include <functional>
 
+#ifdef PARMCB_HAVE_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
+#endif
 
 namespace parmcb {
 
@@ -619,6 +622,7 @@ namespace parmcb {
             return min;
         }
 
+#ifdef PARMCB_HAVE_TBB
         template<bool is_tbb_enabled = ParallelUsingTBB>
         std::tuple<std::set<Edge>, WeightType, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<is_tbb_enabled>::type* = 0) {
@@ -664,6 +668,7 @@ namespace parmcb {
                     },
                     cycle_min);
         }
+#endif
 
         const Graph &g;
         const WeightMap &weight_map;

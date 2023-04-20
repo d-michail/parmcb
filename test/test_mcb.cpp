@@ -107,6 +107,7 @@ TEST_CASE("sequential sva signed"){
 
 }
 
+#ifdef PARMCB_HAVE_TBB
 TEST_CASE("parallel sva signed"){
 
     Graph graph;
@@ -138,6 +139,7 @@ TEST_CASE("parallel sva signed"){
     CHECK(mcb_weight == 124.0);
 
 }
+#endif
 
 TEST_CASE("sequential sva fvs trees"){
 
@@ -171,6 +173,7 @@ TEST_CASE("sequential sva fvs trees"){
 
 }
 
+#ifdef PARMCB_HAVE_TBB
 TEST_CASE("parallel sva fvs trees"){
 
     Graph graph;
@@ -202,6 +205,7 @@ TEST_CASE("parallel sva fvs trees"){
     CHECK(mcb_weight == 124.0);
 
 }
+#endif
 
 TEST_CASE("sequential sva iso trees"){
 
@@ -235,6 +239,7 @@ TEST_CASE("sequential sva iso trees"){
 
 }
 
+#ifdef PARMCB_HAVE_TBB
 TEST_CASE("parallel sva iso trees"){
 
     Graph graph;
@@ -266,3 +271,5 @@ TEST_CASE("parallel sva iso trees"){
     CHECK(mcb_weight == 124.0);
 
 }
+#endif
+

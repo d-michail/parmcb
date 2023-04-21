@@ -29,7 +29,7 @@ typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_signed_tbb
         CycleOutputIterator out, const std::size_t hardware_concurrency_hint = 0) {
 
     typedef typename parmcb::detail::mcb_sva_signed_tbb<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
-    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo> algo(g, weight, k);
+    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, true> algo(g, weight, k);
     return algo.run(out);
 }
 

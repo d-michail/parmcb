@@ -622,7 +622,6 @@ namespace parmcb {
             return min;
         }
 
-#ifdef PARMCB_HAVE_TBB
         template<bool is_tbb_enabled = ParallelUsingTBB>
         std::tuple<std::set<Edge>, WeightType, bool> compute_shortest_odd_cycle(const std::set<Edge> &edges,
                 typename std::enable_if<is_tbb_enabled>::type* = 0) {
@@ -668,7 +667,6 @@ namespace parmcb {
                     },
                     cycle_min);
         }
-#endif
 
         const Graph &g;
         const WeightMap &weight_map;

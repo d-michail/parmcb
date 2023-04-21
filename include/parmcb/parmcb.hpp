@@ -9,3 +9,5 @@
     #include <parmcb/parmcb_sva_signed_tbb.hpp>
 #endif
 #include <parmcb/parmcb_sva_trees.hpp>
+#include <parmcb/parmcb_approx_sva_signed.hpp>
+#include <parmcb/parmcb_approx_sva_trees.hpp>

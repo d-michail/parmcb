@@ -73,6 +73,7 @@ install(FILES ${GENERATED_INCLUDE_DIR}/config.hpp DESTINATION include/parmcb)
 set(
     DEMO_SOURCES
     "mcb-dimacs.cpp"
+    "approx-mcb-dimacs.cpp"
     "collection-stats-dimacs.cpp"
 )
 foreach(demosourcefile ${DEMO_SOURCES})

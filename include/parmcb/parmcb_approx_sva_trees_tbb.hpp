@@ -1,5 +1,5 @@
-#ifndef PARMCB_APPROX_SVA_TREES_HPP_
-#define PARMCB_APPROX_SVA_TREES_HPP_
+#ifndef PARMCB_APPROX_SVA_TREES_TBB_HPP_
+#define PARMCB_APPROX_SVA_TREES_TBB_HPP_
 
 //    Copyright (C) Dimitrios Michail 2019 - 2023.
 // Distributed under the Boost Software License, Version 1.0.
@@ -34,7 +34,9 @@ struct mcb_sva_iso_trees_tbb{
 template<class Graph, class WeightMap, class CycleOutputIterator>
 typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_fvs_trees_tbb(
         const Graph &g, const WeightMap &weight, std::size_t k,
-        CycleOutputIterator out) {
+        CycleOutputIterator out, const std::size_t hardware_concurrency_hint = 0) {
+
+    // TODO: support calling with hardware_concurrency_hint
 
     typedef typename parmcb::detail::mcb_sva_fvs_trees_tbb<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
     parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, true> algo(g, weight, k);
@@ -44,7 +46,9 @@ typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_fvs_trees_
 template<class Graph, class WeightMap, class CycleOutputIterator>
 typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_iso_trees_tbb(
         const Graph &g, const WeightMap &weight, std::size_t k,
-        CycleOutputIterator out) {
+        CycleOutputIterator out, const std::size_t hardware_concurrency_hint = 0) {
+
+    // TODO: support calling with hardware_concurrency_hint
 
     typedef typename parmcb::detail::mcb_sva_iso_trees_tbb<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
     parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, true> algo(g, weight, k);

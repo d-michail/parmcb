@@ -5,18 +5,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
-
-#include <iostream>
-#include <vector>
-
-#include <boost/throw_exception.hpp>
-#include <boost/property_map/property_map.hpp>
-#include <boost/property_map/function_property_map.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/graph_concepts.hpp>
-#include <boost/graph/adjacency_list.hpp>
-
-#include <parmcb/forestindex.hpp>
+#include <parmcb/config.hpp>
 #include <parmcb/detail/dijkstra.hpp>
 #include <parmcb/detail/bfs.hpp>
 
@@ -56,9 +45,11 @@ public:
             throw std::runtime_error(
                     "Invalid value of k < 1 for spanner construction.");
         }
+#ifdef PARMCB_INVARIANTS_CHECK
         check_edge_length_preconditions();
+#endif
 
-        // compute spanner MCB
+        // compute spanner MCB with exact algorithm
         EdgeWeightMapType spanner_weight_map = get(boost::edge_weight,
                 _spanner);
         ExactAlgorithm exact_mcb_algo;
@@ -138,10 +129,12 @@ private:
             }
         }
 
+#ifdef PARMCB_LOGGING
         std::cout << "Graph has " << boost::num_edges(_g) << " edges"
                 << std::endl;
         std::cout << "Spanner has " << boost::num_edges(_spanner) << " edges"
                 << std::endl;
+#endif
 
     }
 

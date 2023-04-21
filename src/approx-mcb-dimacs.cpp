@@ -122,8 +122,18 @@ int main(int argc, char *argv[]) {
     std::list<std::list<edge_descriptor>> cycles;
     double mcb_weight;
     if (vm["signed"].as<bool>()) {
-        std::cout << "Using APPROX_MCB_SVA_SIGNED" << std::endl;
-        mcb_weight = parmcb::approx_mcb_sva_signed(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
+        if (vm["parallel"].as<bool>()) {
+#ifdef PARMCB_HAVE_TBB
+            std::cout << "Using APPROX_MCB_SVA_SIGNED_TBB" << std::endl;
+            mcb_weight = parmcb::approx_mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles),
+                    cores);
+#else
+            std::cerr << "TBB not supported, bailing out." << std::endl;
+#endif
+        } else {
+            std::cout << "Using APPROX_MCB_SVA_SIGNED" << std::endl;
+            mcb_weight = parmcb::approx_mcb_sva_signed(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
+        }
     } else if (vm["fvstrees"].as<bool>()) {
         std::cout << "Using APPROX_MCB_SVA_FVS_TREES" << std::endl;
         mcb_weight = parmcb::approx_mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));

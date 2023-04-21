@@ -24,6 +24,7 @@
 #include <vector>
 #include <cmath>
 
+#include <parmcb/config.hpp>
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
 #include <parmcb/detail/fvs.hpp>
@@ -48,9 +49,11 @@ namespace parmcb {
          */
         ForestIndex<Graph> forest_index(g);
         auto csd = forest_index.cycle_space_dimension();
+#ifdef PARMCB_LOGGING
         if (world.rank() == 0) {
             std::cout << "Cycle space dimension: " << csd << std::endl;
         }
+#endif
 
         /*
          * Initialize support vectors
@@ -72,7 +75,9 @@ namespace parmcb {
             std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
             CyclesBuilder cycles_builder;
             cycles_builder(g, weight_map, trees, cycles);
+#ifdef PARMCB_LOGGING
             std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+#endif
 
             std::vector<SerializableCandidateCycle<Graph>> all_candidate_cycles;
             parmcb::CandidateCycleToSerializableConverter<Graph, WeightMap> converter(trees, forest_index);
@@ -101,7 +106,9 @@ namespace parmcb {
                     candidate_cycles, 0);
         }
 
+#ifdef PARMCB_LOGGING
         std::cout << "Rank " << world.rank() << " received " << candidate_cycles.size() << " candidates" << std::endl;
+#endif
 
         /*
          * Group local candidate cycles per vertex
@@ -128,11 +135,12 @@ namespace parmcb {
                     p.second.end());
             cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
         }
+#ifdef PARMCB_LOGGING
         std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+#endif
         const bool sorted_cycles = true;
         if (sorted_cycles) {
             // sort
-            std::cout << "Sorting cycles" << std::endl;
             std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
                 return a.weight() < b.weight();
             });
@@ -145,9 +153,11 @@ namespace parmcb {
          */
         WeightType mcb_weight = WeightType();
         for (std::size_t k = 0; k < csd; k++) {
+#ifdef PARMCB_LOGGING
             if (k % 250 == 0) {
                 std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
             }
+#endif
 
             // broadcast support vector
             if (world.rank() == 0) {
@@ -194,9 +204,11 @@ namespace parmcb {
             }
         }
 
+#ifdef PARMCB_LOGGING
         if (world.rank() == 0) {
             std::cout << "Total time: " << total_timer.elapsed() << " (sec)" << std::endl;
         }
+#endif
 
         return mcb_weight;
 

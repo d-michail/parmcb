@@ -116,6 +116,14 @@ or
 TBBROOT=/opt/intel/oneapi/tbb/2021.9.0 cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
 
+### Logging
+
+The library has some log statements at various locations that can be helpful. To compile with these statements 
+use the parameter `PARMCB_LOGGING` as shown in the following:
+
+```
+cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DPARMCB_LOGGING=ON
+```
 
 ### Linker errors
 

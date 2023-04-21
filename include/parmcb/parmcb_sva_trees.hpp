@@ -19,6 +19,7 @@
 #include <set>
 #include <vector>
 
+#include <parmcb/config.hpp>
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
 #include <parmcb/util.hpp>
@@ -38,7 +39,9 @@ namespace parmcb {
          */
         ForestIndex<Graph> forest_index(g);
         auto csd = forest_index.cycle_space_dimension();
+#ifdef PARMCB_LOGGING
         std::cout << "Cycle space dimension: " << csd << std::endl;
+#endif
 
         /*
          * Initialize support vectors
@@ -63,11 +66,12 @@ namespace parmcb {
         std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
         CyclesBuilder cycles_builder;
         cycles_builder(g, weight_map, trees, cycles);
+#ifdef PARMCB_LOGGING
         std::cout << "Total candidate cycles: " << cycles.size() << std::endl;
+#endif
         const bool sorted_cycles = true;
         if (sorted_cycles) {
             // sort
-            std::cout << "Sorting cycles" << std::endl;
             std::sort(cycles.begin(), cycles.end(), [](const auto &a, const auto &b) {
                 return a.weight() < b.weight();
             });
@@ -81,9 +85,11 @@ namespace parmcb {
          */
         WeightType mcb_weight = WeightType();
         for (std::size_t k = 0; k < csd; k++) {
+#ifdef PARMCB_LOGGING
             if (k % 250 == 0) {
                 std::cout << k << std::endl;
             }
+#endif
 
             /*
              * Compute shortest odd cycle
@@ -116,9 +122,11 @@ namespace parmcb {
             mcb_weight += std::get<1>(best);
         }
 
+#ifdef PARMCB_LOGGING
         std::cout << "trees   timer" << trees_timer.format();
         std::cout << "cycle   timer" << cycle_timer.format();
         std::cout << "support timer" << support_timer.format();
+#endif
 
         return mcb_weight;
     }

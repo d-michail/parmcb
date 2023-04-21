@@ -19,8 +19,8 @@
 #include <set>
 #include <vector>
 
+#include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>
-
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
 #include <parmcb/util.hpp>
@@ -144,8 +144,10 @@ namespace parmcb {
             mcb_weight += std::get<1>(best);
         }
 
-//        std::cout << "cycle   timer" << cycle_timer.format();
-//        std::cout << "support timer" << support_timer.format();
+#ifdef PARMCB_LOGGING
+        std::cout << "cycle   timer" << cycle_timer.format();
+        std::cout << "support timer" << support_timer.format();
+#endif
 
         return mcb_weight;
     }

@@ -55,6 +55,8 @@ add_subdirectory(include/parmcb/mpi)
 set(GENERATED_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/parmcb)
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
 
+option(PARMCB_LOGGING "PARMCB_LOGGING" OFF)
+
 set(PARMCB_HAVE_BOOST ${Boost_FOUND})
 set(PARMCB_HAVE_TBB ${TBB_FOUND})
 set(PARMCB_HAVE_MPI ${MPI_FOUND})

@@ -23,6 +23,7 @@
 #include <tbb/concurrent_vector.h>
 #include <tbb/task_group.h>
 
+#include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
@@ -188,7 +189,9 @@ namespace parmcb {
          */
         ForestIndex<Graph> forest_index(g);
         auto csd = forest_index.cycle_space_dimension();
+#ifdef PARMCB_LOGGING
         std::cout << "Cycle dimension " << csd << std::endl;
+#endif
         std::vector<Vertex> vertices;
         {
             VertexIt vi, viend;
@@ -218,9 +221,11 @@ namespace parmcb {
         WeightType mcb_weight = WeightType();
         parmcb::detail::OddCycleFinder<Graph, WeightMap> odd_cycle_finder(g, weight_map, forest_index, vertices);
         for (std::size_t k = 0; k < csd; k++) {
+#ifdef PARMCB_LOGGING
             if (k % 250 == 0) {
                 std::cout << "iteration = " << k << std::endl;
             }
+#endif
 
             /*
              * Choose the sparsest support heuristic
@@ -267,8 +272,10 @@ namespace parmcb {
             mcb_weight += std::get<1>(cycle);
         }
 
+#ifdef PARMCB_LOGGING
         std::cout << "cycle   timer" << cycle_timer.format();
         std::cout << "support timer" << support_timer.format();
+#endif
 
         return mcb_weight;
     }

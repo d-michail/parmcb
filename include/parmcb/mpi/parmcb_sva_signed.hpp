@@ -27,6 +27,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
+#include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>
 #include <parmcb/mpi/sptrees.hpp>
 #include <parmcb/forestindex.hpp>
@@ -238,9 +239,11 @@ namespace parmcb {
          */
         WeightType mcb_weight = WeightType();
         for (std::size_t k = 0; k < csd; k++) {
+#ifdef PARMCB_LOGGING
             if (k % 250 == 0) {
                 std::cout << "Rank " << world.rank() << " at cycle " << k << std::endl;
             }
+#endif
 
             // TODO: check if sparsest support heuristic makes sense here
 
@@ -286,7 +289,9 @@ namespace parmcb {
         }
 
         if (world.rank() == 0) {
+#ifdef PARMCB_LOGGING
             std::cout << "Total time: " << total_timer.elapsed() << " (sec)" << std::endl;
+#endif
         }
 
         return mcb_weight;

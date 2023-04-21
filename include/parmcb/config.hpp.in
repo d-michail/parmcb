@@ -4,5 +4,6 @@
 #cmakedefine PARMCB_HAVE_BOOST
 #cmakedefine PARMCB_HAVE_TBB
 #cmakedefine PARMCB_HAVE_MPI
+#cmakedefine PARMCB_LOGGING
 
 #endif

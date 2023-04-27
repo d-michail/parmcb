@@ -141,6 +141,27 @@ namespace parmcb {
             return *this;
         }
 
+        SpVecFP<P> operator*(const P &a) const {
+            SpVecFP<P> res(p);
+
+            auto it = entries.begin(), it_e = entries.end();
+            while (it != it_e) {
+                entry_type entry = *it;
+                std::size_t index = std::get<0>(entry);
+                P value= std::get<1>(entry);
+
+                P v = (value * a ) % p;
+                while(v < 0) v += p;   // make [-i]_p = [p-i]_p
+                while (v >= p) v -= p; // make [i+p]_p = [i]_p
+
+                if (v != 0) {
+                    res.entries.push_back(boost::make_tuple(index, v));
+                }
+                it++;
+            }
+            return res;
+        }
+
         size_type size() const {
             return entries.size();
         }

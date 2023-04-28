@@ -6,8 +6,6 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 namespace parmcb {
 
 template<class T>
@@ -98,6 +96,35 @@ T fp<T>::get_mult_inverse(T &a, T &p) {
     }
     return x;
 }
+
+template<class T>
+class primes {
+
+public:
+    // check if a number is prime
+    static bool is_prime(const T &p) {
+        if (p == T(1))
+            return true;
+        T t = T(2);
+#ifdef PARMCB_INVARIANTS_CHECK
+         assert( p >= t );
+ #endif
+        if (p % 2 == 0)
+            return false;
+        T zero = T(0);
+        T sqrtt = T(sqrt(p)) + 1;
+#ifdef PARMCB_INVARIANTS_CHECK
+         if ( sqrtt * sqrtt < p )
+             throw new std::runtime_error("error calculating square");
+#endif
+        while (t <= sqrtt) {
+            if (p % t == zero)
+                return false;
+            t++;
+        }
+        return true;
+    }
+};
 
 } // parmcb
 

@@ -18,10 +18,13 @@
 #include <boost/property_map/property_map.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>
 #include <boost/timer/timer.hpp>
+
+#ifdef PARMCB_HAVE_TBB
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/task_group.h>
+#endif
 
 #include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>

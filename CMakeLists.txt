@@ -114,6 +114,7 @@ set(
     TEST_SOURCES
     "test_fp.cpp"
     "test_forest_index.cpp"
+    "test_spvecfp.cpp"
     "test_fvs.cpp"
     "test_mcb.cpp"
     "test_approx_mcb.cpp"

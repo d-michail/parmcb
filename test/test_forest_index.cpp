@@ -37,20 +37,20 @@ TEST_CASE("forest index")
     boost::add_vertex(graph);
     auto v18 = boost::add_vertex(graph);
 
-    boost::add_edge(v0, v7, graph).first;
-    boost::add_edge(v0, v5, graph).first;
-    boost::add_edge(v3, v5, graph).first;
-    boost::add_edge(v3, v8, graph).first;
-    boost::add_edge(v7, v9, graph).first;
-    boost::add_edge(v8, v9, graph).first;
-    boost::add_edge(v8, v10, graph).first;
-    boost::add_edge(v9, v18, graph).first;
-    boost::add_edge(v10, v18, graph).first;
-    boost::add_edge(v11, v12, graph).first;
-    boost::add_edge(v12, v13, graph).first;
-    boost::add_edge(v12, v15, graph).first;
-    boost::add_edge(v13, v14, graph).first;
-    boost::add_edge(v14, v15, graph).first;
+    boost::add_edge(v0, v7, graph);
+    boost::add_edge(v0, v5, graph);
+    boost::add_edge(v3, v5, graph);
+    boost::add_edge(v3, v8, graph);
+    boost::add_edge(v7, v9, graph);
+    boost::add_edge(v8, v9, graph);
+    boost::add_edge(v8, v10, graph);
+    boost::add_edge(v9, v18, graph);
+    boost::add_edge(v10, v18, graph);
+    boost::add_edge(v11, v12, graph);
+    boost::add_edge(v12, v13, graph);
+    boost::add_edge(v12, v15, graph);
+    boost::add_edge(v13, v14, graph);
+    boost::add_edge(v14, v15, graph);
 
     CHECK(boost::num_vertices(graph) == 15);
     CHECK(boost::num_edges(graph) == 14);

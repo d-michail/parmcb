@@ -37,7 +37,7 @@ typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_fvs_trees(
         CycleOutputIterator out) {
 
     typedef typename parmcb::detail::mcb_sva_fvs_trees<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
-    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, false> algo(g, weight, k);
+    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, false> algo(g, weight, boost::get(boost::vertex_index, g), k);
     return algo.run(out);
 }
 
@@ -47,7 +47,7 @@ typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_iso_trees(
         CycleOutputIterator out) {
 
     typedef typename parmcb::detail::mcb_sva_fvs_trees<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
-    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, false> algo(g, weight, k);
+    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, false> algo(g, weight, boost::get(boost::vertex_index, g), k);
     return algo.run(out);
 }
 

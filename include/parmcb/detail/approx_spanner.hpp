@@ -251,10 +251,9 @@ public:
     typedef typename boost::property_traits<WeightMap>::value_type WeightType;
     typedef typename boost::property_map<Graph, boost::edge_weight_t>::type EdgeWeightMapType;
 
-    BaseApproxSpannerAlgorithm(const Graph &g, const WeightMap &weight_map,
+    BaseApproxSpannerAlgorithm(const Graph &g, const WeightMap &weight_map, const VertexIndexMapType& index_map,
             std::size_t k) :
-            _g(g), _weight_map(weight_map), _k(k), _index_map(
-                    boost::get(boost::vertex_index, g)), _vertex_g_to_spanner_vec(
+            _g(g), _weight_map(weight_map), _k(k), _index_map(index_map), _vertex_g_to_spanner_vec(
                     boost::num_vertices(g),
                     (std::numeric_limits<std::size_t>::max)()), _vertex_g_to_spanner(
                     parmcb::detail::VertexIndexFunctor<Graph, Vertex>(

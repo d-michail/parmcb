@@ -25,10 +25,7 @@ struct mcb_sva_signed_tbb {
 template<class Graph, class WeightMap, class CycleOutputIterator>
 typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_signed_tbb(
         const Graph &g, const WeightMap &weight, std::size_t k,
-        CycleOutputIterator out, const std::size_t hardware_concurrency_hint = 0) {
-
-    // TODO: support calling with hardware_concurrency_hint
-
+        CycleOutputIterator out) {
     typedef typename parmcb::detail::mcb_sva_signed_tbb<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
 
     parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, true> algo(g, weight, boost::get(boost::vertex_index, g), k);

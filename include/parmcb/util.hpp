@@ -16,7 +16,12 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/property_map.hpp>
 
+#include <parmcb/config.hpp>
 #include <parmcb/forestindex.hpp>
+
+#ifdef PARMCB_HAVE_TBB
+#include <tbb/tbb.h>
+#endif
 
 #define BUFFER_SIZE 1024
 
@@ -142,6 +147,16 @@ namespace parmcb {
         }
 
     }
+
+#ifdef PARMCB_HAVE_TBB
+    void set_global_tbb_concurrency(const std::size_t hardware_concurrency_hint) {
+#if TBB_VERSION_MAJOR > 2020
+    	oneapi::tbb::global_control global_limit(oneapi::tbb::global_control::max_allowed_parallelism, hardware_concurrency_hint);
+#else
+    	tbb::task_scheduler_init init(hardware_concurrency_hint);
+#endif
+    }
+#endif
 
 }
 

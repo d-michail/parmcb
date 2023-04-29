@@ -39,6 +39,9 @@ endif()
 
 # Intel TBB
 find_package(TBB)
+if(TBB_FOUND)
+    message(STATUS "Found TBB ${TBB_VERSION}")
+endif()
 
 # MPI
 find_package(MPI COMPONENTS CXX)

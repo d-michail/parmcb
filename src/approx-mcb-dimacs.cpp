@@ -106,16 +106,18 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Using k=" << k << ", approximation will be " << (2*k-1) << std::endl;
 
-    std::size_t cores = 0;
+#ifdef PARMCB_HAVE_TBB
     if (vm.count("cores")) {
-        cores = vm["cores"].as<int>();
+    	std::size_t cores = vm["cores"].as<int>();
+        if (cores == 0) {
+            cores = boost::thread::hardware_concurrency();
+        }
+        if (vm["verbose"].as<bool>() && vm["parallel"].as<bool>()) {
+            std::cout << "Using cores: " << cores << std::endl;
+            parmcb::set_global_tbb_concurrency(cores);
+        }
     }
-    if (cores == 0) {
-        cores = boost::thread::hardware_concurrency();
-    }
-    if (vm["verbose"].as<bool>() && vm["parallel"].as<bool>()) {
-        std::cout << "Using cores: " << cores << std::endl;
-    }
+#endif
 
     boost::timer::cpu_timer timer;
 
@@ -125,8 +127,7 @@ int main(int argc, char *argv[]) {
         if (vm["parallel"].as<bool>()) {
 #ifdef PARMCB_HAVE_TBB
             std::cout << "Using APPROX_MCB_SVA_SIGNED_TBB" << std::endl;
-            mcb_weight = parmcb::approx_mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles),
-                    cores);
+            mcb_weight = parmcb::approx_mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
 #else
             std::cerr << "TBB not supported, bailing out." << std::endl;
 #endif
@@ -138,8 +139,7 @@ int main(int argc, char *argv[]) {
         if (vm["parallel"].as<bool>()) {
 #ifdef PARMCB_HAVE_TBB
             std::cout << "Using APPROX_MCB_SVA_FSV_TREES_TBB" << std::endl;
-            mcb_weight = parmcb::approx_mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles),
-                    cores);
+            mcb_weight = parmcb::approx_mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
 #else
             std::cerr << "TBB not supported, bailing out." << std::endl;
 #endif
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
         if (vm["parallel"].as<bool>()) {
 #ifdef PARMCB_HAVE_TBB
             std::cout << "Using APPROX_MCB_SVA_ISO_TREES_TBB" << std::endl;
-                    mcb_weight = parmcb::approx_mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles), cores);
+                    mcb_weight = parmcb::approx_mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
 #else
             std::cerr << "TBB not supported, bailing out." << std::endl;
 #endif

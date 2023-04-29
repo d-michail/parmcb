@@ -180,7 +180,7 @@ namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_signed_tbb(const Graph &g, WeightMap weight_map,
-            CycleOutputIterator out, const std::size_t hardware_concurrency_hint = 0) {
+            CycleOutputIterator out) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
         typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;

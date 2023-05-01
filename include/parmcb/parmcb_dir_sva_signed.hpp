@@ -36,7 +36,6 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		CycleOutputIterator out) {
 
 	typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
-	typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
 	typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
 #ifdef PARMCB_INVARIANTS_CHECK
@@ -121,10 +120,16 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		 * Output new cycle
 		 */
 		std::list<Edge> cyclek_edgelist;
-		// TODO: convert cycle to edge list
-		// TODO: compute its weight
+		WeightType cyclek_weight = WeightType();
+		auto ck_end = cycle_k.end();
+		for (auto ck_it = cycle_k.begin(); ck_it != ck_end; ck_it++) {
+			auto index = boost::get<0>(*ck_it);
+			Edge e = forest_index(index);
+			cyclek_weight += weight_map[e];
+			cyclek_edgelist.push_back(e);
+		}
 		*out++ = cyclek_edgelist;
-//		mcb_weight += std::get<1>(best);
+		mcb_weight += cyclek_weight;
 	}
 
 #ifdef PARMCB_LOGGING

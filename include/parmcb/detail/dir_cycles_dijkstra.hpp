@@ -7,8 +7,8 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <parmcb/config.hpp>
-#include <parmcb/detail/dijkstra.hpp>
-#include <parmcb/detail/bfs.hpp>
+#include <parmcb/fp.hpp>
+#include <parmcb/spvecfp.hpp>
 
 #include <functional>
 #include <numeric>
@@ -25,7 +25,7 @@ namespace parmcb {
 namespace detail {
 
 template<class Graph, class WeightMap, typename P, bool ParallelUsingTBB>
-class DirectedCyclesDijkstra {
+class ShortestNonZeroModpCycle {
 public:
     typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
     typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
@@ -33,17 +33,21 @@ public:
     typedef typename boost::property_traits<WeightMap>::value_type WeightType;
     typedef typename boost::property_map<Graph, boost::edge_weight_t>::type EdgeWeightMapType;
 
-    DirectedCyclesDijkstra(const Graph &g, const WeightMap &weight_map,
-            const VertexIndexMapType &index_map, P p) :
-            _g(g), _weight_map(weight_map), _index_map(index_map), _p(p) {
+    ShortestNonZeroModpCycle(const Graph &g, const WeightMap &weight_map,
+            const VertexIndexMapType &index_map, const ForestIndex<Graph>& forest_index, P p) :
+            _g(g), _weight_map(weight_map), _index_map(index_map), _forest_index(forest_index), _p(p) {
     }
 
-    template<class EdgeOutputIterator>
-    WeightType operator()(EdgeOutputIterator out) {
-        return construct_cycles_for_non_spanner_edges(out);
+    SpVecFP<P> operator()(const SpVecFP<P>& support) {
+        return find_shortest_non_zero_cycle_mod_p(support);
     }
 
 private:
+
+    SpVecFP<P> find_shortest_non_zero_cycle_mod_p(const SpVecFP<P>& support) {
+    	// TODO
+    	return support;
+    }
 
     template<class EdgeOutputIterator, bool is_tbb_enabled = ParallelUsingTBB>
     WeightType find_shortest_cycle(EdgeOutputIterator out,
@@ -64,11 +68,26 @@ private:
     const Graph &_g;
     const WeightMap &_weight_map;
     const VertexIndexMapType &_index_map;
+    const ForestIndex<Graph>& _forest_index;
     const P _p;
 
 };
 
 } // detail
+
+template<class Graph, class WeightMap, typename P>
+parmcb::SpVecFP<P> shortest_non_zero_cycle_modp(const Graph &g, WeightMap weight_map, const ForestIndex<Graph>& forest_index, P p, const parmcb::SpVecFP<P>& support) {
+	const auto &index_map = boost::get(boost::vertex_index, g);
+	parmcb::detail::ShortestNonZeroModpCycle<Graph, WeightMap, P, false> cycler(g, weight_map, index_map, forest_index, p);
+	return cycler(support);
+}
+
+template<class Graph, class WeightMap, typename P>
+parmcb::SpVecFP<P> shortest_non_zero_cycle_modp_tbb(const Graph &g, WeightMap weight_map, const ForestIndex<Graph>& forest_index, P p, const parmcb::SpVecFP<P>& support) {
+	const auto &index_map = boost::get(boost::vertex_index, g);
+	parmcb::detail::ShortestNonZeroModpCycle<Graph, WeightMap, P, true> cycler(g, weight_map, index_map, forest_index, p);
+	return cycler(support);
+}
 
 } // parmcb
 

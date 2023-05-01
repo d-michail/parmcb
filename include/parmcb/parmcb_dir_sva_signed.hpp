@@ -26,6 +26,7 @@
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecfp.hpp>
 #include <parmcb/util.hpp>
+#include <parmcb/detail/dir_cycles_dijkstra.hpp>
 
 namespace parmcb {
 
@@ -92,10 +93,7 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		 * Compute shortest cycle which is non-zero (mod p)
 		 */
 		cycle_timer.resume();
-
-		// TODO
-		parmcb::SpVecFP<parmcb::ptype> cycle_k;
-
+		parmcb::SpVecFP<parmcb::ptype> cycle_k = parmcb::shortest_non_zero_cycle_modp(g, weight_map, forest_index, p, support[k]);
 		cycle_timer.stop();
 
 		/*
@@ -113,10 +111,10 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		while ( tmpk >= p ) tmpk -= p; // make [i+p]_p = [i]_p
 		parmcb::SpVecFP<parmcb::ptype> tmp = support[k] * fp<parmcb::ptype>::get_mult_inverse( tmpk, p );
 
-		// update support support_j, j > k
-		for(std::size_t j = k+1; j < csd; j++ )
+		// update support_j, j > k
+		for(std::size_t j = k+1; j < csd; j++ ) {
 			support[j] -=  tmp * (cycle_k * support[j]) ;
-
+		}
 		support_timer.stop();
 
 		/*

@@ -15,3 +15,5 @@
     #include <parmcb/parmcb_approx_sva_signed_tbb.hpp>
     #include <parmcb/parmcb_approx_sva_trees_tbb.hpp>
 #endif
+
+#include <parmcb/parmcb_dir_sva_signed.hpp>

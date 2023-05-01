@@ -121,6 +121,7 @@ set(
     "test_fvs.cpp"
     "test_mcb.cpp"
     "test_approx_mcb.cpp"
+    "test_dir_mcb.cpp"
 )
 foreach(testsourcefile ${TEST_SOURCES})
     string(REPLACE ".cpp" "" testname ${testsourcefile})

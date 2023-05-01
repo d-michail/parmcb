@@ -20,214 +20,247 @@ template<typename P>
 class SpVecFP {
 
 public:
-    typedef typename boost::tuple<std::size_t, P> entry_type;
-    typedef typename std::vector<entry_type>::size_type size_type;
-    typedef typename std::vector<entry_type>::const_iterator const_iterator;
+	typedef typename boost::tuple<std::size_t, P> entry_type;
+	typedef typename std::vector<entry_type>::size_type size_type;
+	typedef typename std::vector<entry_type>::const_iterator const_iterator;
 
-    SpVecFP() :
-            p(3) {
-    }
+	SpVecFP() :
+			p(3) {
+	}
 
-    SpVecFP(const P &p) :
-            p(p) {
-    }
+	SpVecFP(const P &p) :
+			p(p) {
+	}
 
-    SpVecFP(const SpVecFP<P> &v) {
-        entries = v.entries;
-        p = v.p;
-    }
-
-    SpVecFP(const SpVecFP<P> &&v) {
-        entries = std::move(v.entries);
-        p = v.p;
-    }
-
-    ~SpVecFP(void) {
-    }
-
-    SpVecFP<P>& operator=(const std::size_t &index) {
-        entries.clear();
+	SpVecFP(const P &p, const std::size_t &index) :
+			p(p) {
 #ifdef PARMCB_INVARIANTS_CHECK
             assert(index >= 0);
 #endif
-        entries.push_back(boost::make_tuple(index, 1));
-        return *this;
-    }
+		entries.push_back(boost::make_tuple(index, 1));
+	}
 
-    SpVecFP<P>& operator=(const SpVecFP<P> &v) {
-        if (this == &v) {
-            return *this;
-        }
-        entries = v.entries;
-        p = v.p;
-        return *this;
-    }
+	SpVecFP(const SpVecFP<P> &v) {
+		entries = v.entries;
+		p = v.p;
+	}
 
-    SpVecFP<P>& operator=(const SpVecFP<P> &&v) {
-        if (this == &v) {
-            return *this;
-        }
-        entries = std::move(v.entries);
-        p = v.p;
-        return *this;
-    }
+	SpVecFP(const SpVecFP<P> &&v) {
+		entries = std::move(v.entries);
+		p = v.p;
+	}
 
-    P operator*(const SpVecFP<P> &v) const {
-        P res = 0;
+	~SpVecFP(void) {
+	}
 
-        auto it = entries.begin(), it_e = entries.end();
-        auto v_it = v.entries.begin(), v_it_e = v.entries.end();
+	SpVecFP<P>& operator=(const std::size_t &index) {
+		entries.clear();
+#ifdef PARMCB_INVARIANTS_CHECK
+            assert(index >= 0);
+#endif
+		entries.push_back(boost::make_tuple(index, 1));
+		return *this;
+	}
 
-        while (it != it_e && v_it != v_it_e) {
-            entry_type entry = *it;
-            std::size_t index = boost::get<0>(entry);
+	SpVecFP<P>& operator=(const SpVecFP<P> &v) {
+		if (this == &v) {
+			return *this;
+		}
+		entries = v.entries;
+		p = v.p;
+		return *this;
+	}
 
-            entry_type v_entry = *v_it;
-            std::size_t v_index = boost::get<0>(v_entry);
+	SpVecFP<P>& operator=(const SpVecFP<P> &&v) {
+		if (this == &v) {
+			return *this;
+		}
+		entries = std::move(v.entries);
+		p = v.p;
+		return *this;
+	}
 
-            if (index > v_index) {
-                v_it++;
-            } else if (index < v_index) {
-                it++;
-            } else {
-                P v = (boost::get<1>(entry) * boost::get<1>(v_entry)) % p;
-                res = (res + v) % p;
-                it++;
-                v_it++;
-            }
-        }
-        return res;
-    }
+	P operator*(const SpVecFP<P> &v) const {
+		P res = 0;
 
-    SpVecFP<P> operator+(const SpVecFP<P> &v) const {
-        SpVecFP<P> res(p);
-        auto it = entries.begin(), it_e = entries.end();
-        auto v_it = v.entries.begin(), v_it_e = v.entries.end();
+		auto it = entries.begin(), it_e = entries.end();
+		auto v_it = v.entries.begin(), v_it_e = v.entries.end();
 
-        // now add them
-        while (it != it_e && v_it != v_it_e) {
-            entry_type entry = *it;
-            std::size_t index = boost::get<0>(entry);
-            P value = boost::get<1>(entry);
+		while (it != it_e && v_it != v_it_e) {
+			entry_type entry = *it;
+			std::size_t index = boost::get<0>(entry);
 
-            entry_type v_entry = *v_it;
-            std::size_t v_index = boost::get<0>(v_entry);
-            P v_value = boost::get<1>(v_entry);
+			entry_type v_entry = *v_it;
+			std::size_t v_index = boost::get<0>(v_entry);
 
-            if (index > v_index) {
-                res.entries.push_back(boost::make_tuple(v_index, v_value));
-                v_it++;
-            } else if (index < v_index) {
-                res.entries.push_back(boost::make_tuple(index, value));
-                it++;
-            } else {
-                P v = (value + v_value) % p;
-                while (v < 0)
-                    v += p;   // make [-i]_p = [p-i]_p
-                while (v >= p)
-                    v -= p; // make [i+p]_p = [i]_p
-                if (v != 0) {
-                    res.entries.push_back(boost::make_tuple(index, v));
-                }
-                it++;
-                v_it++;
-            }
-        }
+			if (index > v_index) {
+				v_it++;
+			} else if (index < v_index) {
+				it++;
+			} else {
+				P v = (boost::get<1>(entry) * boost::get<1>(v_entry)) % p;
+				res = (res + v) % p;
+				it++;
+				v_it++;
+			}
+		}
+		return res;
+	}
 
-        // append remaining stuff
-        while (it != it_e) {
-            entry_type entry = *it;
-            std::size_t index = boost::get<0>(entry);
-            P value = boost::get<1>(entry);
-            res.entries.push_back(boost::make_tuple(index, value));
-            it++;
-        }
-        while (v_it != v_it_e) {
-            entry_type v_entry = *v_it;
-            std::size_t v_index = boost::get<0>(v_entry);
-            P v_value = boost::get<1>(v_entry);
-            res.entries.push_back(boost::make_tuple(v_index, v_value));
-            v_it++;
-        }
+	SpVecFP<P> operator+(const SpVecFP<P> &v) const {
+		SpVecFP<P> res(p);
+		auto it = entries.begin(), it_e = entries.end();
+		auto v_it = v.entries.begin(), v_it_e = v.entries.end();
 
-        return res;
-    }
+		// now add them
+		while (it != it_e && v_it != v_it_e) {
+			entry_type entry = *it;
+			std::size_t index = boost::get<0>(entry);
+			P value = boost::get<1>(entry);
 
-    SpVecFP<P>& operator+=(const SpVecFP<P> &v) {
-        *this = *this + v;
-        return *this;
-    }
+			entry_type v_entry = *v_it;
+			std::size_t v_index = boost::get<0>(v_entry);
+			P v_value = boost::get<1>(v_entry);
 
-    SpVecFP<P> operator*(const P &a) const {
-        SpVecFP<P> res(p);
-        auto it = entries.begin(), it_e = entries.end();
-        while (it != it_e) {
-            entry_type entry = *it;
-            std::size_t index = boost::get<0>(entry);
-            P value = boost::get<1>(entry);
+			if (index > v_index) {
+				res.entries.push_back(boost::make_tuple(v_index, v_value));
+				v_it++;
+			} else if (index < v_index) {
+				res.entries.push_back(boost::make_tuple(index, value));
+				it++;
+			} else {
+				P v = (value + v_value) % p;
+				while (v < 0)
+					v += p;   // make [-i]_p = [p-i]_p
+				while (v >= p)
+					v -= p; // make [i+p]_p = [i]_p
+				if (v != 0) {
+					res.entries.push_back(boost::make_tuple(index, v));
+				}
+				it++;
+				v_it++;
+			}
+		}
 
-            P v = (value * a) % p;
-            while (v < 0)
-                v += p;   // make [-i]_p = [p-i]_p
-            while (v >= p)
-                v -= p; // make [i+p]_p = [i]_p
+		// append remaining stuff
+		while (it != it_e) {
+			entry_type entry = *it;
+			std::size_t index = boost::get<0>(entry);
+			P value = boost::get<1>(entry);
+			res.entries.push_back(boost::make_tuple(index, value));
+			it++;
+		}
+		while (v_it != v_it_e) {
+			entry_type v_entry = *v_it;
+			std::size_t v_index = boost::get<0>(v_entry);
+			P v_value = boost::get<1>(v_entry);
+			res.entries.push_back(boost::make_tuple(v_index, v_value));
+			v_it++;
+		}
 
-            if (v != 0) {
-                res.entries.push_back(boost::make_tuple(index, v));
-            }
-            it++;
-        }
-        return res;
-    }
+		return res;
+	}
 
-    SpVecFP<P>& operator*=(const P &a) {
-        *this = *this * a;
-        return *this;
-    }
+	SpVecFP<P>& operator+=(const SpVecFP<P> &v) {
+		*this = *this + v;
+		return *this;
+	}
 
-    size_type size() const {
-        return entries.size();
-    }
+	SpVecFP<P> operator-() const {
+	    SpVecFP<P> res(p);
+	    auto it = entries.begin(), it_e = entries.end();
 
-    const_iterator begin() const {
-        return entries.begin();
-    }
+		while (it != it_e) {
+			entry_type entry = *it;
+			std::size_t index = boost::get<0>(entry);
+			P v = boost::get<1>(entry);
+			v *= -1;
+			while (v < 0)
+				v += p;   // make [-i]_p = [p-i]_p
+			while (v >= p)
+				v -= p; // make [i+p]_p = [i]_p
+			if (v != 0) {
+				res.entries.push_back(boost::make_tuple(index, v));
+			}
+		}
+	    return res;
+	}
 
-    const_iterator end() const {
-        return entries.end();
-    }
+	SpVecFP<P>& operator-=(const SpVecFP<P> &v) {
+		*this = *this + (-v);
+		return *this;
+	}
 
-    P prime() const {
-        return p;
-    }
+	SpVecFP<P> operator*(const P &a) const {
+		SpVecFP<P> res(p);
+		auto it = entries.begin(), it_e = entries.end();
+		while (it != it_e) {
+			entry_type entry = *it;
+			std::size_t index = boost::get<0>(entry);
+			P value = boost::get<1>(entry);
 
-    void clear() {
-        entries.clear();
-    }
+			P v = (value * a) % p;
+			while (v < 0)
+				v += p;   // make [-i]_p = [p-i]_p
+			while (v >= p)
+				v -= p; // make [i+p]_p = [i]_p
+
+			if (v != 0) {
+				res.entries.push_back(boost::make_tuple(index, v));
+			}
+			it++;
+		}
+		return res;
+	}
+
+	SpVecFP<P>& operator*=(const P &a) {
+		*this = *this * a;
+		return *this;
+	}
+
+	size_type size() const {
+		return entries.size();
+	}
+
+	const_iterator begin() const {
+		return entries.begin();
+	}
+
+	const_iterator end() const {
+		return entries.end();
+	}
+
+	P prime() const {
+		return p;
+	}
+
+	void clear() {
+		entries.clear();
+	}
 
 private:
-    friend class boost::serialization::access;
+	friend class boost::serialization::access;
 
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version) {
-        ar & p;
-        ar & entries;
-    }
+	template<class Archive>
+	void serialize(Archive &ar, const unsigned int version) {
+		ar & p;
+		ar & entries;
+	}
 
-    std::vector<entry_type> entries;
-    P p;
+	std::vector<entry_type> entries;
+	P p;
 };
 
 template<typename P>
 std::ostream& operator<<(std::ostream &o, const SpVecFP<P> &v) {
-    auto v_end = v.end();
-    for (auto it = v.begin(); it != v_end; it++) {
-        auto tuple = *it;
-        o << "(" << boost::get<0>(tuple) << "," << boost::get<1>(tuple) << ")"
-                << " ";
-    }
-    o << "(mod " << v.prime() << ")";
-    return o;
+	auto v_end = v.end();
+	for (auto it = v.begin(); it != v_end; it++) {
+		auto tuple = *it;
+		o << "(" << boost::get<0>(tuple) << "," << boost::get<1>(tuple) << ")"
+				<< " ";
+	}
+	o << "(mod " << v.prime() << ")";
+	return o;
 }
 
 } // parmcb

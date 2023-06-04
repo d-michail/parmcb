@@ -117,6 +117,7 @@ set(
     TEST_SOURCES
     "test_fp.cpp"
     "test_forest_index.cpp"
+    "test_as_undirected_dijkstra.cpp"
     "test_spvecfp.cpp"
     "test_fvs.cpp"
     "test_mcb.cpp"

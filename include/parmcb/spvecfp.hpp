@@ -104,7 +104,7 @@ public:
 				v_it++;
 			}
 		}
-		return res;
+		return normalize(res);
 	}
 
 	SpVecFP<P> operator+(const SpVecFP<P> &v) const {
@@ -129,11 +129,7 @@ public:
 				res.entries.push_back(boost::make_tuple(index, value));
 				it++;
 			} else {
-				P v = (value + v_value) % p;
-				while (v < 0)
-					v += p;   // make [-i]_p = [p-i]_p
-				while (v >= p)
-					v -= p; // make [i+p]_p = [i]_p
+				P v = normalize((value + v_value) % p);
 				if (v != 0) {
 					res.entries.push_back(boost::make_tuple(index, v));
 				}
@@ -173,15 +169,11 @@ public:
 		while (it != it_e) {
 			entry_type entry = *it;
 			std::size_t index = boost::get<0>(entry);
-			P v = boost::get<1>(entry);
-			v *= -1;
-			while (v < 0)
-				v += p;   // make [-i]_p = [p-i]_p
-			while (v >= p)
-				v -= p; // make [i+p]_p = [i]_p
+			P v = normalize(-boost::get<1>(entry));
 			if (v != 0) {
 				res.entries.push_back(boost::make_tuple(index, v));
 			}
+			it++;
 		}
 	    return res;
 	}
@@ -198,13 +190,7 @@ public:
 			entry_type entry = *it;
 			std::size_t index = boost::get<0>(entry);
 			P value = boost::get<1>(entry);
-
-			P v = (value * a) % p;
-			while (v < 0)
-				v += p;   // make [-i]_p = [p-i]_p
-			while (v >= p)
-				v -= p; // make [i+p]_p = [i]_p
-
+			P v = normalize((value * a) % p);
 			if (v != 0) {
 				res.entries.push_back(boost::make_tuple(index, v));
 			}
@@ -245,6 +231,14 @@ private:
 	void serialize(Archive &ar, const unsigned int version) {
 		ar & p;
 		ar & entries;
+	}
+
+	P normalize(P v) const {
+		while (v < 0)
+			v += p;   // make [-i]_p = [p-i]_p
+		while (v >= p)
+			v -= p; // make [i+p]_p = [i]_p
+		return v;
 	}
 
 	std::vector<entry_type> entries;

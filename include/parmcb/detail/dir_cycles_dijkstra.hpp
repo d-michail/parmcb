@@ -36,6 +36,7 @@ public:
     typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
     typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
     typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
+    typedef typename boost::graph_traits<Graph>::edge_iterator EdgeIt;
     typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
     typedef typename boost::property_traits<WeightMap>::value_type WeightType;
     typedef typename boost::property_map<Graph, boost::edge_weight_t>::type EdgeWeightMapType;
@@ -54,11 +55,41 @@ private:
     SpVecFP<P> find_shortest_non_zero_cycle_mod_p(const SpVecFP<P>& support) {
     	std::cout << "Computing shortest cycle with non-zero mod p with support = " << support << std::endl;
 
-    	std::map<std::pair<Vertex,Vertex>, WeightType> first;
-    	std::map<std::pair<Vertex,Vertex>, std::list<std::pair<bool,Edge>>> paths;
-    	std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> paths_vec;
-    	std::map<std::pair<Vertex,Vertex>, P> residuals;
-    	//std::map<std::pair<Vertex,Vertex>, WeightType> second;
+    	std::map<std::pair<Vertex,Vertex>, WeightType> f_weights;
+    	std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> f_paths;
+    	std::map<std::pair<Vertex,Vertex>, P> f_residuals;
+
+    	compute_first_paths(support, f_weights, f_paths, f_residuals);
+
+    	std::map<std::pair<Vertex,Vertex>, WeightType> s_weights;
+    	std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> s_paths;
+    	std::map<std::pair<Vertex,Vertex>, P> s_residuals;
+
+    	compute_second_paths(support, f_weights, f_paths, f_residuals, s_weights, s_paths, s_residuals);
+
+    	return compute_min_cycle(support, s_weights, s_paths, s_residuals);
+    }
+
+    template<class EdgeOutputIterator, bool is_tbb_enabled = ParallelUsingTBB>
+    WeightType find_shortest_cycle(EdgeOutputIterator out,
+            typename std::enable_if<!is_tbb_enabled>::type* = 0) {
+
+    	// TODO
+
+    }
+
+    template<class EdgeOutputIterator, bool is_tbb_enabled = ParallelUsingTBB>
+    WeightType find_shortest_cycle(EdgeOutputIterator out,
+            typename std::enable_if<is_tbb_enabled>::type* = 0) {
+
+    	// TODO
+
+    }
+
+    void compute_first_paths(const SpVecFP<P>& support,
+    		std::map<std::pair<Vertex,Vertex>, WeightType> &weights,
+			std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> &paths,
+			std::map<std::pair<Vertex,Vertex>, P> &residuals) {
 
     	// Compute one shortest path between each pair of vertices. Use the undirected graph.
     	// Directions are only used in order to compute residue classes.
@@ -92,13 +123,12 @@ private:
 				}
 
 				std::pair<Vertex,Vertex> uv = std::make_pair(u, v);
-				first[uv] = dist[v];
+				weights[uv] = dist[v];
 
-				std::cout << "Found shortest path from " << u << " to " << v << ", f=" << first[uv] << std::endl;
+				std::cout << "Found shortest path from " << u << " to " << v << ", f=" << weights[uv] << std::endl;
 
 				// compute path and residual class
-				SpVecFP<P> path_vec(_p);
-				std::list<std::pair<bool,Edge>> path;
+				SpVecFP<P> path(_p);
 
 				Vertex path_cur = v;
 				Vertex path_goal = u;
@@ -111,12 +141,10 @@ private:
 		        	bool direction = boost::target(e, _g) == path_cur;
 		        	SpVecFP<P> e_vec(_p, e_idx);
 		        	if (!direction) {
-		        		path_vec += -e_vec;
+		        		path += -e_vec;
 		        	} else {
-		        		path_vec += e_vec;
+		        		path += e_vec;
 		        	}
-		        	path.push_front(std::make_pair(direction, e));
-
 		        	if (direction) {
 		        		path_cur = boost::source(e, _g);
 		        	} else {
@@ -124,28 +152,37 @@ private:
 		        	}
 		        }
 
-				P residual = path_vec * support;
+				P residual = path * support;
 				residuals[uv] = residual;
 				std::cout << "Residual r=" << residual << std::endl;
 
-				paths_vec[uv] = path_vec;
 				paths[uv] = path;
-				//std::cout << "Path p=" << path[uv] << std::endl;
-				std::cout << "Path p=";
-				std::for_each(path.begin(), path.end(),[](const std::pair<bool,Edge> &x){
-					std::cout << std::get<1>(x);
-					if (!std::get<0>(x)) {
-						std::cout << " (rev)";
-					}
-					std::cout << ", ";
-				});
-				std::cout << std::endl;
-				std::cout << "Vec path p=" << path_vec << std::endl;
+//				std::cout << "Path p=";
+//				std::for_each(path.begin(), path.end(),[](const std::pair<bool,Edge> &x){
+//					std::cout << std::get<1>(x);
+//					if (!std::get<0>(x)) {
+//						std::cout << " (rev)";
+//					}
+//					std::cout << ", ";
+//				});
+//				std::cout << std::endl;
+				std::cout << "Path p=" << path << std::endl;
 			}
 		}
+    }
+
+    void compute_second_paths(const SpVecFP<P>& support,
+    		const std::map<std::pair<Vertex,Vertex>, WeightType> &first_weight,
+			const std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> &first_paths,
+			const std::map<std::pair<Vertex,Vertex>, P> &first_residuals,
+			std::map<std::pair<Vertex,Vertex>, WeightType> &second_weight,
+			std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> &second_paths,
+			std::map<std::pair<Vertex,Vertex>, P> &second_residuals) {
+    	// TODO
 
 		// Now find a second path for each pair of vertices which has a different residue class
 		// from the first path.
+    	VertexIt ui, uiend;
 		for (boost::tie(ui, uiend) = boost::vertices(_g); ui != uiend; ++ui) {
 			auto u = *ui;
 			std::cout << "Running modified shortest paths from " << u << std::endl;
@@ -179,29 +216,58 @@ private:
 
 		}
 
-
-    	// TODO
-		//
-		// For each edge u-v combine it with s_{v-u} to get a cycle. If the cycle has non-zero
-		// residue class use it. The minimum of all these usable cycles, is the one we are looking for.
-
-    	return support;
     }
 
-    template<class EdgeOutputIterator, bool is_tbb_enabled = ParallelUsingTBB>
-    WeightType find_shortest_cycle(EdgeOutputIterator out,
-            typename std::enable_if<!is_tbb_enabled>::type* = 0) {
+    SpVecFP<P> compute_min_cycle(const SpVecFP<P>& support,
+			std::map<std::pair<Vertex,Vertex>, WeightType> &s_weights,
+			std::map<std::pair<Vertex,Vertex>, SpVecFP<P>> &s_paths,
+			std::map<std::pair<Vertex,Vertex>, P> &s_residuals) {
 
-    	// TODO
+    	bool min_cycle_found;
+    	SpVecFP<P> min_cycle;
+    	WeightType min_cycle_weight;
 
-    }
+    	// For each edge u-v combine it with s_{v-u} to get a cycle. If the cycle has non-zero
+    	// residue class use it. The minimum of all these usable cycles, is the one we are looking for.
+    	EdgeIt e_it, e_it_end;
+    	for (boost::tie(e_it, e_it_end) = boost::edges(_g); e_it != e_it_end; ++e_it) {
+    		auto e = *e_it;
+    		auto e_weight = _weight_map[e];
 
-    template<class EdgeOutputIterator, bool is_tbb_enabled = ParallelUsingTBB>
-    WeightType find_shortest_cycle(EdgeOutputIterator out,
-            typename std::enable_if<is_tbb_enabled>::type* = 0) {
+    		auto u = boost::source(e, _g);
+    		auto v = boost::target(e, _g);
+    		auto vu = std::make_pair(v, u);
 
-    	// TODO
+    		if (!s_residuals.count(vu)) {
+    			// no path found from v->u
+    			continue;
+    		}
 
+    		auto cycle = s_paths[vu] + SpVecFP<P>(_p, _forest_index(e));
+    		auto cycle_weight = s_weights[vu] + e_weight;
+    		P cycle_residue = cycle * support;
+
+    		if (cycle_residue == 0) {
+    			continue;
+    		}
+
+    		std::cout << "Candidate for minimum is=" << cycle << " with weight=" << cycle_weight << " and residue=" << cycle_residue << std::endl;
+
+    		if (!min_cycle_found) {
+    			min_cycle_found = true;
+    			min_cycle = cycle;
+    			min_cycle_weight = cycle_weight;
+    		} else if (cycle_weight < min_cycle_weight) {
+    			min_cycle = cycle;
+    			min_cycle_weight = cycle_weight;
+    		}
+    	}
+
+    	if (!min_cycle_found) {
+    		throw new std::runtime_error("Failed to find minimum cycle.");
+    	}
+
+    	return min_cycle;
     }
 
     /**

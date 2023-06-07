@@ -107,7 +107,7 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		//       thus O(d logd) = O(m logm) in total
 		parmcb::ptype tmpk = support[k] * cycle_k;
 		while (tmpk < 0) tmpk += p;    // make [-i]_p = [p-i]_p
-		while ( tmpk >= p ) tmpk -= p; // make [i+p]_p = [i]_p
+		while (tmpk >= p) tmpk -= p; // make [i+p]_p = [i]_p
 		parmcb::SpVecFP<parmcb::ptype> tmp = support[k] * fp<parmcb::ptype>::get_mult_inverse( tmpk, p );
 
 		// update support_j, j > k

@@ -113,7 +113,7 @@ TBBROOT=/apps/compilers/intel/19.0.1/tbb cmake ../parmcb/
 or 
 
 ```
-TBBROOT=/opt/intel/oneapi/tbb/2021.9.0 cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+TBBROOT=/opt/intel/oneapi/tbb/latest cmake ../parmcb/ -G"Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
 
 ### Logging

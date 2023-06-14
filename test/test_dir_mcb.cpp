@@ -95,6 +95,7 @@ TEST_CASE("sequential sva signed"){
     //
 
     std::list<std::list<Edge>> cycles;
+    boost::multiprecision::cpp_int p = 17;
     double mcb_weight = parmcb::mcb_dir_sva_signed(graph, weight, p, std::back_inserter(cycles));
 
 //

@@ -132,8 +132,8 @@ private:
 				std::pair<Vertex, Vertex> uv = std::make_pair(u, v);
 				weights[uv] = dist[v];
 
-				std::cout << "Found shortest path from " << u << " to " << v
-						<< ", f=" << weights[uv] << std::endl;
+//				std::cout << "Found shortest path from " << u << " to " << v
+//						<< ", f=" << weights[uv] << std::endl;
 
 				// compute path and residual class
 				SpVecFP<P> path(_p);
@@ -195,22 +195,22 @@ private:
 					Vertex, WeightType&> dist_map(
 					parmcb::detail::VertexIndexFunctor<Graph, WeightType>(dist,
 							_index_map));
-			std::vector<std::tuple<bool, Edge>> pred(boost::num_vertices(_g),
-					std::make_tuple(false, Edge()));
+			std::vector<std::tuple<bool, SpVecFP<P>>> path(boost::num_vertices(_g),
+					std::make_tuple(false, SpVecFP<P>(_p)));
 			boost::function_property_map<
 					parmcb::detail::VertexIndexFunctor<Graph,
-							std::tuple<bool, Edge>>, Vertex,
-					std::tuple<bool, Edge>&> pred_map(
+							std::tuple<bool, SpVecFP<P>>>, Vertex,
+					std::tuple<bool, SpVecFP<P>>&> path_map(
 					parmcb::detail::VertexIndexFunctor<Graph,
-							std::tuple<bool, Edge> >(pred, _index_map));
+							std::tuple<bool, SpVecFP<P>> >(path, _index_map));
 
-			second_sp_dijkstra(first_weights, first_paths, first_residuals, u, dist_map, pred_map);
+			second_sp_dijkstra(support, first_weights, first_paths, first_residuals, u, dist_map, path_map);
 
 			VertexIt vi, viend;
 			for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend;
 					++vi) {
 				auto v = *vi;
-				if (v == u || !std::get<0>(pred_map[v])) {
+				if (v == u || !std::get<0>(path_map[v])) {
 					// skip when self-loop or not reachable
 					continue;
 				}
@@ -221,33 +221,9 @@ private:
 				std::cout << "Found second shortest path from " << u << " to "
 						<< v << ", f=" << second_weights[uv] << std::endl;
 
-				// compute path and residual class
-				SpVecFP<P> path(_p);
-
-				Vertex path_cur = v;
-				Vertex path_goal = u;
-				while (path_cur != path_goal) {
-					if (!std::get<0>(pred[path_cur])) {
-						throw new std::runtime_error("Invalid path returned!");
-					}
-					Edge e = std::get<1>(pred[path_cur]);
-					std::size_t e_idx = _forest_index(e);
-					bool direction = boost::target(e, _g) == path_cur;
-					SpVecFP<P> e_vec(_p, e_idx);
-					if (!direction) {
-						path += -e_vec;
-					} else {
-						path += e_vec;
-					}
-					if (direction) {
-						path_cur = boost::source(e, _g);
-					} else {
-						path_cur = boost::target(e, _g);
-					}
-				}
-
-				second_residuals[uv] = path * support;
-				second_paths[uv] = path;
+				auto p = std::get<1>(path_map[v]);
+				second_residuals[uv] = p * support;
+				second_paths[uv] = p;
 			}
 
 		}
@@ -317,17 +293,17 @@ private:
 	 *
 	 * TODO: rewrite me to work correctly
 	 */
-	template<class DistanceMap, class PredecessorMap>
+	template<class DistanceMap, class PathMap>
 	void second_sp_dijkstra(
-			const std::map<std::pair<Vertex, Vertex>, WeightType> &first_weights,
-			const std::map<std::pair<Vertex, Vertex>, SpVecFP<P>> &first_paths,
-			const std::map<std::pair<Vertex, Vertex>, P> &first_residuals,
-			const typename boost::graph_traits<Graph>::vertex_descriptor &s,
+			const SpVecFP<P> &support,
+			const std::map<std::pair<Vertex, Vertex>, WeightType> &f_weights,
+			const std::map<std::pair<Vertex, Vertex>, SpVecFP<P>> &f_paths,
+			const std::map<std::pair<Vertex, Vertex>, P> &f_residuals,
+			const typename boost::graph_traits<Graph>::vertex_descriptor &u,
 			DistanceMap &dist_map,
-			PredecessorMap &pred_map) {
+			PathMap &path_map) {
 
 		typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
-		typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;
 		typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 		typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
 		typedef boost::d_ary_heap_indirect<Vertex, 4,
@@ -356,52 +332,107 @@ private:
 		VertexQueue queue(dist_map, index_in_heap_map, compare);
 
 		// initialize step
-		// TODO
+		VertexIt vi, viend;
+		for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend;
+				++vi) {
+			auto v = *vi;
+			std::pair<Vertex, Vertex> uv = std::make_pair(u, v);
+			if (!f_residuals.count(uv)) {
+				// no path found from u->v
+				continue;
+			}
 
-		boost::put(dist_map, s, DistanceType());
-		boost::put(pred_map, s, std::make_tuple(false, Edge()));
-		queue.push(s);
+			WeightType f_weight = f_weights.at(uv);
+			SpVecFP<P> f_path = f_paths.at(uv);
+			P f_residual = f_residuals.at(uv);
 
-		while (!queue.empty()) {
-			Vertex u = queue.top();
-			queue.pop();
-			DistanceType d_u = boost::get(dist_map, u);
-
-			auto eiOutRange = boost::out_edges(u, _g);
-			auto eiInRange = boost::in_edges(u, _g);
+			auto eiOutRange = boost::out_edges(v, _g);
+			auto eiInRange = boost::in_edges(v, _g);
 			auto range = boost::join(
 					boost::iterator_range<decltype(eiOutRange.first)>(
 							eiOutRange.first, eiOutRange.second),
 					boost::iterator_range<decltype(eiInRange.first)>(
 							eiInRange.first, eiInRange.second));
 
+			bool min_found = false;
+			WeightType min_weight;
+			SpVecFP<P> min_path;
 			for (const auto &e : range) {
 				auto w = boost::target(e, _g);
-				if (w == u) {
+				bool direction = false;
+				if (w == v) {
 					w = boost::source(e, _g);
+					direction = true;
 				}
-				if (w == u) {
-					// self-loop
-					continue;
-				}
-				if (w == s) {
-					continue;
+				if (w == v) {
+					throw new std::runtime_error("Self loop detected");
 				}
 
-				const WeightType c = combine(d_u, get(_weight_map, e));
-				bool visited_w = std::get<0>(boost::get(pred_map, w));
-				if (!visited_w) {
-					// first time found
-					boost::put(dist_map, w, c);
-					boost::put(pred_map, w, std::make_tuple(true, e));
-					queue.push(w);
-				} else if (compare(c, boost::get(dist_map, w))) {
-					// already reached
-					boost::put(dist_map, w, c);
-					boost::put(pred_map, w, std::make_tuple(true, e));
-					queue.update(w);
+				SpVecFP<P> e_path = SpVecFP<P>(_p, (direction?1:-1) * _forest_index(e));
+				auto s_path = f_path + e_path;
+				auto s_residual = s_path * support;
+				if (s_residual != f_residual) {
+					auto e_weight = _weight_map[e];
+					auto s_weight = f_weight + e_weight;
+					if (!min_found) {
+						min_found = true;
+						min_weight = s_weight;
+						min_path = s_path;
+					} else if (s_weight < min_weight) {
+						min_weight = s_weight;
+						min_path = s_path;
+					}
 				}
 			}
+
+			if (min_found) {
+				boost::put(dist_map, v, min_weight);
+				boost::put(path_map, v, std::make_tuple(false, min_path));
+				queue.push(v);
+			}
+		}
+
+		while (!queue.empty()) {
+			Vertex w = queue.top();
+			queue.pop();
+			DistanceType d_w = boost::get(dist_map, w);
+
+			auto eiOutRange = boost::out_edges(w, _g);
+			auto eiInRange = boost::in_edges(w, _g);
+			auto range = boost::join(
+					boost::iterator_range<decltype(eiOutRange.first)>(
+							eiOutRange.first, eiOutRange.second),
+					boost::iterator_range<decltype(eiInRange.first)>(
+							eiInRange.first, eiInRange.second));
+
+			// TODO
+//			for (const auto &e : range) {
+//				auto o = boost::target(e, _g);
+//				if (w == o) {
+//					o = boost::source(e, _g);
+//				}
+//				if (w == o) {
+//					// self-loop
+//					continue;
+//				}
+//				if (w == u) {
+//					continue;
+//				}
+//
+//				const WeightType c = combine(d_w, get(_weight_map, e));
+//				bool visited_o = std::get<0>(boost::get(pred_map, o));
+//				if (!visited_o) {
+//					// first time found
+//					boost::put(dist_map, o, c);
+//					boost::put(pred_map, o, std::make_tuple(true, e));
+//					queue.push(o);
+//				} else if (compare(c, boost::get(dist_map, o))) {
+//					// already reached
+//					boost::put(dist_map, o, c);
+//					boost::put(pred_map, o, std::make_tuple(true, e));
+//					queue.update(o);
+//				}
+//			}
 		}
 	}
 

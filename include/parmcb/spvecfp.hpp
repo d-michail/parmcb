@@ -32,7 +32,7 @@ public:
 			p(p) {
 	}
 
-	SpVecFP(const P &p, const std::size_t &index) :
+	SpVecFP(const P &p, const std::size_t index) :
 			p(p) {
 #ifdef PARMCB_INVARIANTS_CHECK
             assert(index >= 0);

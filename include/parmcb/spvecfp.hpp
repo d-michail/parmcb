@@ -250,7 +250,7 @@ std::ostream& operator<<(std::ostream &o, const SpVecFP<P> &v) {
 	auto v_end = v.end();
 	for (auto it = v.begin(); it != v_end; it++) {
 		auto tuple = *it;
-		o << "(" << boost::get<0>(tuple) << "," << boost::get<1>(tuple) << ")"
+		o << "(i=" << boost::get<0>(tuple) << ",v=" << boost::get<1>(tuple) << ")"
 				<< " ";
 	}
 	o << "(mod " << v.prime() << ")";

@@ -88,6 +88,7 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 	WeightType mcb_weight = WeightType();
 	parmcb::ptype tmpi;
 	for (std::size_t k = 0; k < csd; k++) {
+		std::cout << "Computing cycle k=" << k << std::endl;
 		/*
 		 * Compute shortest cycle which is non-zero (mod p)
 		 */
@@ -95,24 +96,31 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		parmcb::SpVecFP<parmcb::ptype> cycle_k = parmcb::shortest_non_zero_cycle_modp(g, weight_map, forest_index, p, support[k]);
 		cycle_timer.stop();
 
+		std::cout << "Found cycle k=" << k << ", cycle=" << cycle_k << std::endl;
+
 		/*
 		 * Update support vectors
 		 */
 		support_timer.resume();
+
+		std::cout << "Updating support vectors" << std::endl;
 
         // precompute part
         // NOTE: we do not precompute inverses, since we don't want to have a dependency
 		//       on the maximum size of an array that will store these values
         //       p is O(d^2 logd) and thus O(logd) to compute inverse at most d times,
 		//       thus O(d logd) = O(m logm) in total
-		parmcb::ptype tmpk = support[k] * cycle_k;
-		while (tmpk < 0) tmpk += p;    // make [-i]_p = [p-i]_p
-		while (tmpk >= p) tmpk -= p; // make [i+p]_p = [i]_p
-		parmcb::SpVecFP<parmcb::ptype> tmp = support[k] * fp<parmcb::ptype>::get_mult_inverse( tmpk, p );
+		auto tmpk = support[k] * cycle_k;
+		parmcb::SpVecFP<parmcb::ptype> tmp = support[k] * fp<parmcb::ptype>::get_mult_inverse(tmpk , p );
 
 		// update support_j, j > k
 		for(std::size_t j = k+1; j < csd; j++ ) {
 			support[j] -=  tmp * (cycle_k * support[j]) ;
+		}
+
+		std::cout << "New support vectors from [" << k+1 << "," << csd-1 << "]" << std::endl;
+		for(std::size_t j = k+1; j < csd; j++ ) {
+			std::cout << support[j] << std::endl;
 		}
 		support_timer.stop();
 
@@ -124,6 +132,9 @@ typename boost::property_traits<WeightMap>::value_type mcb_dir_sva_signed(
 		auto ck_end = cycle_k.end();
 		for (auto ck_it = cycle_k.begin(); ck_it != ck_end; ck_it++) {
 			auto index = boost::get<0>(*ck_it);
+			if (index < 0) {
+				index = -index;
+			}
 			Edge e = forest_index(index);
 			cyclek_weight += weight_map[e];
 			cyclek_edgelist.push_back(e);

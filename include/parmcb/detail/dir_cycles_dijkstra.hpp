@@ -50,7 +50,7 @@ public:
 
 	SpVecFP<P> operator()(const SpVecFP<P> &support) {
 		std::cout
-				<< "Computing shortest cycle with non-zero mod p with support = "
+				<< "Computing shortest cycle with non-zero mod " << _p << " with support = "
 				<< support << std::endl;
 
 		std::map<std::pair<Vertex, Vertex>, WeightType> f_weights;
@@ -99,7 +99,7 @@ private:
 		VertexIt ui, uiend;
 		for (boost::tie(ui, uiend) = boost::vertices(_g); ui != uiend; ++ui) {
 			auto u = *ui;
-			std::cout << "Running shortest paths from " << u << std::endl;
+//			std::cout << "Running shortest paths from " << u << std::endl;
 
 			std::vector<WeightType> dist(boost::num_vertices(_g),
 					(std::numeric_limits<WeightType>::max)());
@@ -160,8 +160,8 @@ private:
 				residuals[uv] = path * support;
 				paths[uv] = path;
 
-				std::cout << "Found shortest path from " << u << " to " << v
-						<< ", weight=" << weights[uv] << ", residual=" << residuals[uv]  << ", path=" << paths[uv] << std::endl;
+//				std::cout << "Found shortest path from " << u << " to " << v
+//						<< ", weight=" << weights[uv] << ", residual=" << residuals[uv]  << ", path=" << paths[uv] << std::endl;
 			}
 		}
 	}
@@ -243,7 +243,9 @@ private:
 			std::map<std::pair<Vertex, Vertex>, SpVecFP<P>> &s_paths,
 			std::map<std::pair<Vertex, Vertex>, P> &s_residuals) {
 
-		bool min_cycle_found;
+		std::cout << "Trying to find minimum cycle" << std::endl;
+
+		bool min_cycle_found = false;
 		SpVecFP<P> min_cycle;
 		WeightType min_cycle_weight;
 
@@ -287,6 +289,7 @@ private:
 		}
 
 		if (!min_cycle_found) {
+			std::cout << "No minimum cycle found" << std::endl;
 			throw new std::runtime_error("Failed to find minimum cycle.");
 		}
 
@@ -332,19 +335,26 @@ private:
 
 		VertexQueue queue(dist_map, index_in_heap_map, compare);
 
+		std::cout << "Computing second shortest paths from vertex" << u << std::endl;
+
 		// initialize step
 		VertexIt vi, viend;
 		for (boost::tie(vi, viend) = boost::vertices(_g); vi != viend; ++vi) {
 			auto v = *vi;
 			std::pair<Vertex, Vertex> uv = std::make_pair(u, v);
-			if (!f_residuals.count(uv)) {
+			if (v == u || !f_residuals.count(uv)) {
 				// no path found from u->v
+				std::cout << "Skipping init for vertex " << v << " since no first path found" << std::endl;
+				// TODO: may be add first path for self
 				continue;
 			}
 
 			WeightType f_weight = f_weights.at(uv);
 			SpVecFP<P> f_path = f_paths.at(uv);
 			P f_residual = f_residuals.at(uv);
+
+			std::cout << "First shortest path from " << u << " to " << v
+					<< ", weight=" << f_weight << ", residual=" << f_residual  << ", path=" << f_path << std::endl;
 
 			auto eiOutRange = boost::out_edges(v, _g);
 			auto eiInRange = boost::in_edges(v, _g);
@@ -368,12 +378,20 @@ private:
 					throw new std::runtime_error("Self loop detected");
 				}
 
+				std::pair<Vertex, Vertex> uw = std::make_pair(u, w);
+				if (!f_residuals.count(uw)) {
+					// no path from u->w
+					continue;
+				}
+				WeightType w_weight = f_weights.at(uw);
+				SpVecFP<P> w_path = f_paths.at(uw);
+
 				SpVecFP<P> e_vec(_p, _forest_index(e));
-				auto s_path = f_path + (direction? e_vec : -e_vec);
+				auto s_path = w_path + (direction? e_vec : -e_vec);
 				auto s_residual = s_path * support;
 				if (s_residual != f_residual) {
 					auto e_weight = _weight_map[e];
-					auto s_weight = f_weight + e_weight;
+					auto s_weight = w_weight + e_weight;
 					if (!min_found) {
 						min_found = true;
 						min_weight = s_weight;

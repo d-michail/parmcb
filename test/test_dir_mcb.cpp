@@ -32,13 +32,6 @@ void create_graph(Graph& graph) {
     auto v8 = add_vertex(graph);
     auto v9 = add_vertex(graph);
     auto v10 = add_vertex(graph);
-    auto v11 = add_vertex(graph);
-    auto v12 = add_vertex(graph);
-    auto v13 = add_vertex(graph);
-    auto v14 = add_vertex(graph);
-    auto v15 = add_vertex(graph);
-    auto v16 = add_vertex(graph);
-    (void) v16;
 
     auto e01 = add_edge(v0, v1, graph).first;
     weight[e01] = 1.0;
@@ -64,38 +57,26 @@ void create_graph(Graph& graph) {
     weight[e108] = 1.0;
     auto e109 = add_edge(v10, v9, graph).first;
     weight[e109] = 1.0;
-    auto e1112 = add_edge(v11, v12, graph).first;
-    weight[e1112] = 3.0;
-    auto e12_13 = add_edge(v12, v13, graph).first;
-    weight[e12_13] = 1.0;
-    auto e13_14 = add_edge(v13, v14, graph).first;
-    weight[e13_14] = 1.0;
-    auto e14_15 = add_edge(v14, v15, graph).first;
-    weight[e14_15] = 1.0;
-    auto e12_15 = add_edge(v12, v15, graph).first;
-    weight[e12_15] = 1.0;
 }
 
-TEST_CASE("sequential sva signed"){
+TEST_CASE("sequential dir sva signed"){
     Graph graph;
     create_graph(graph);
     property_map<Graph, edge_weight_t>::type weight = get(edge_weight, graph);
 
-    CHECK(num_vertices(graph) == 17);
-    CHECK(num_edges(graph) == 17);
+    CHECK(num_vertices(graph) == 11);
+    CHECK(num_edges(graph) == 12);
 
     //
     //   0 -- 1 -- 2 -- 7 -- 9
     //   |         |         |
     //   5 -- 4 -- 3 -- 8 -- 10
     //   |
-    //   6    11 -- 12 -- 13
-    //              |      |
-    //  16          15 --  14
+    //   6
     //
 
     std::list<std::list<Edge>> cycles;
-    boost::multiprecision::cpp_int p = 17;
+    boost::multiprecision::cpp_int p = 41;
     double mcb_weight = parmcb::mcb_dir_sva_signed(graph, weight, p, std::back_inserter(cycles));
 
 //

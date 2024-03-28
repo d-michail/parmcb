@@ -89,7 +89,7 @@ namespace parmcb {
                 const VertexIndexMapType &index_map = boost::get(boost::vertex_index, g);
 
                 /*
-                 * Build all shortest path trees
+                 * Build all shortest path trees. Record which tree goes to which vertex.
                  */
                 std::vector<std::size_t> trees_index_map(boost::num_vertices(g));
                 VertexIt ui, uiend;
@@ -131,6 +131,18 @@ namespace parmcb {
 
                 std::map<std::pair<std::size_t, Edge>, vertex_descriptor> cycle_to_vertex;
                 for (const auto &cc : allcycles) {
+                    // first check that this is indeed a circuit
+                    parmcb::SPTree<Graph, WeightMap> &tree_x = trees[cc.tree()];
+                    auto u = boost::source(cc.edge(), g);
+                    auto v = boost::target(cc.edge(), g);
+                    auto first_x_u = tree_x.first(u);
+                    auto first_x_v = tree_x.first(v);
+
+                    if (first_x_u == first_x_v) {
+                        continue;
+                    }
+
+                    // we are a circuit, add graph node
                     vertex_descriptor newv = boost::add_vertex(cycles_g);
                     cycle_to_vertex[std::make_pair(cc.tree(), cc.edge())] = newv;
                     boost::put(tree_map, newv, cc.tree());
@@ -140,6 +152,8 @@ namespace parmcb {
 
                 vertex_iterator alli, alliend;
                 for (boost::tie(alli, alliend) = boost::vertices(cycles_g); alli != alliend; ++alli) {
+
+                    // check that we are a circuit
                     auto tree = boost::get(tree_map, *alli);
                     auto e = boost::get(edge_map, *alli);
 
@@ -155,13 +169,13 @@ namespace parmcb {
                         continue;
                     }
 
+                    // we are a circuit
                     if (x == u) {
                         boost::add_edge(*alli, cycle_to_vertex[std::make_pair(trees_index_map[index_map[v]], e)],
                                 cycles_g);
                     } else {
                         auto xprime = tree_x.first(u);
                         parmcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
-
                         auto first_xprime_v = tree_xprime.first(v);
 
                         if (x == first_xprime_v) {

@@ -282,6 +282,7 @@ namespace parmcb {
             boost::function_property_map<parmcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge>>, Vertex,
                     std::tuple<bool, Edge>&> pred_map(
                     parmcb::detail::VertexIndexFunctor<Graph, std::tuple<bool, Edge> >(pred, _index_map));
+
             lex_dijkstra(_g, _weight_map, _source, dist_map, pred_map);
 
             // create tree nodes and mapping
@@ -290,6 +291,7 @@ namespace parmcb {
                 auto v = *vi;
                 auto vindex = _index_map[v];
                 auto p = boost::get(pred_map, v);
+
                 if (v == _source) {
                     _tree_node_map[vindex] = std::shared_ptr<SPNode<Graph, WeightMap>>(
                             new SPNode<Graph, WeightMap>(v, dist[vindex]));

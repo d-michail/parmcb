@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     } else if (vm["fvstrees"].as<bool>()) {
         if (vm["parallel"].as<bool>()) {
 #ifdef PARMCB_HAVE_TBB
-            std::cout << "Using APPROX_MCB_SVA_FSV_TREES_TBB" << std::endl;
+            std::cout << "Using APPROX_MCB_SVA_FVS_TREES_TBB" << std::endl;
             mcb_weight = parmcb::approx_mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), k, std::back_inserter(cycles));
 #else
             std::cerr << "TBB not supported, bailing out." << std::endl;

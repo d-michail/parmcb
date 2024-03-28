@@ -30,16 +30,16 @@ namespace parmcb {
             typedef typename boost::property_traits<DistanceMap>::value_type DistanceType;
 
             LexDistance() :
-                    distance(DistanceType()), edge_count(0), min_vertex_index(0) {
+                    distance(DistanceType()), edge_count(0), vertex_indices() {
             }
 
-            LexDistance(DistanceType distance, std::size_t edge_count, std::size_t min_vertex_index) :
-                    distance(distance), edge_count(edge_count), min_vertex_index(min_vertex_index) {
+            LexDistance(DistanceType distance, std::size_t edge_count, std::set<std::size_t> vertex_indices) :
+                    distance(distance), edge_count(edge_count), vertex_indices(vertex_indices) {
             }
 
             DistanceType distance;
             std::size_t edge_count;
-            std::size_t min_vertex_index;
+            std::set<std::size_t> vertex_indices;
         };
 
         template<class Graph, class DistanceMap>
@@ -49,17 +49,43 @@ namespace parmcb {
             bool operator()(const LexDistance<Graph, DistanceMap> &a, const LexDistance<Graph, DistanceMap> &b) {
                 if (a.distance < b.distance) {
                     return true;
-                } else if (a.distance > b.distance) {
+                }
+                if (a.distance > b.distance) {
                     return false;
                 }
                 if (a.edge_count < b.edge_count) {
                     return true;
-                } else if (a.edge_count > b.edge_count) {
+                }
+                if (a.edge_count > b.edge_count) {
                     return false;
                 }
-                if (a.min_vertex_index < b.min_vertex_index) {
+
+                std::set<std::size_t> non_common_a;
+                std::set_difference(a.vertex_indices.begin(), a.vertex_indices.end(), 
+                            b.vertex_indices.begin(), b.vertex_indices.end(),
+                            std::inserter(non_common_a, non_common_a.end()));
+
+                std::set<std::size_t> non_common_b;
+                std::set_difference(b.vertex_indices.begin(), b.vertex_indices.end(), 
+                            a.vertex_indices.begin(), a.vertex_indices.end(),
+                            std::inserter(non_common_b, non_common_b.end()));
+
+                if (non_common_a.empty() && !non_common_b.empty()) {
                     return true;
                 }
+                if (!non_common_a.empty() && non_common_b.empty()) {
+                    return false;
+                }
+
+                // If non-common elements are different, compare them
+                if (!non_common_a.empty() && !non_common_b.empty()) {
+                    auto min_elem_a = *non_common_a.begin();
+                    auto min_elem_b = *non_common_b.begin();
+                    if (min_elem_a < min_elem_b) { 
+                        return true;
+                    }
+                }                
+
                 return false;
             }
         };
@@ -83,8 +109,11 @@ namespace parmcb {
                 const WeightType e_weight = boost::get(weight_map, e);
                 const WeightType sum = combine(a.distance, e_weight);
 
-                return LexDistance<Graph, DistanceMap>(sum, a.edge_count + 1, std::min( { a.min_vertex_index,
-                        index_target, index_source }));
+                std::set<std::size_t> vertex_indices = a.vertex_indices;
+                vertex_indices.insert(index_target);
+                vertex_indices.insert(index_source);
+
+                return LexDistance<Graph, DistanceMap>(sum, a.edge_count + 1, vertex_indices);
             }
 
             const DistanceType inf;
@@ -130,7 +159,7 @@ namespace parmcb {
 
         VertexQueue queue(lex_dist_map, index_in_heap_map, compare);
 
-        boost::put(lex_dist_map, s, LexDistanceType(DistanceType(), 0, index_map[s]));
+        boost::put(lex_dist_map, s, LexDistanceType(DistanceType(), 0, std::set<std::size_t>({ index_map[s] })));
         boost::put(pred_map, s, std::make_tuple(false, Edge()));
         queue.push(s);
 

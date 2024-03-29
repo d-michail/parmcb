@@ -1,7 +1,7 @@
 #ifndef PARMCB_DETAIL_LEX_DIJKSTRA_HPP_
 #define PARMCB_DETAIL_LEX_DIJKSTRA_HPP_
 
-//    Copyright (C) Dimitrios Michail 2019 - 2021.
+//    Copyright (C) Dimitrios Michail 2019 - 2024.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
@@ -60,32 +60,31 @@ namespace parmcb {
                     return false;
                 }
 
-                std::set<std::size_t> non_common_a;
-                std::set_difference(a.vertex_indices.begin(), a.vertex_indices.end(), 
-                            b.vertex_indices.begin(), b.vertex_indices.end(),
-                            std::inserter(non_common_a, non_common_a.end()));
+                /*
+                 * The last sorting criteria is the minimum vertex index which is in the non-common part
+                 * of the two paths. We maintain a sorted list of the indices.
+                 */
+                auto it_a = a.vertex_indices.begin();
+                auto it_b = b.vertex_indices.begin();
 
-                std::set<std::size_t> non_common_b;
-                std::set_difference(b.vertex_indices.begin(), b.vertex_indices.end(), 
-                            a.vertex_indices.begin(), a.vertex_indices.end(),
-                            std::inserter(non_common_b, non_common_b.end()));
-
-                if (non_common_a.empty() && !non_common_b.empty()) {
-                    return true;
-                }
-                if (!non_common_a.empty() && non_common_b.empty()) {
-                    return false;
-                }
-
-                // If non-common elements are different, compare them
-                if (!non_common_a.empty() && !non_common_b.empty()) {
-                    auto min_elem_a = *non_common_a.begin();
-                    auto min_elem_b = *non_common_b.begin();
-                    if (min_elem_a < min_elem_b) { 
+                while(true) { 
+                    if (it_a == a.vertex_indices.end() && it_b != b.vertex_indices.end()) { 
                         return true;
                     }
-                }                
+                    if (it_a != a.vertex_indices.end() && it_b == b.vertex_indices.end()) { 
+                        return false;
+                    }
+                    if (*it_a < *it_b) {
+                        return true;
+                    }
+                    if (*it_a > *it_b) {
+                        return false;
+                    }
 
+                    ++it_a;
+                    ++it_b;
+                }
+                
                 return false;
             }
         };

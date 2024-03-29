@@ -102,7 +102,7 @@ void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
     std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
     CyclesBuilder cycles_builder;
     cycles_builder(g, weight_map, trees, cycles);
-    std::cout << name << " cycles: " << cycles.size() << std::endl;
+    std::cout << name << " cycles count: " << cycles.size() << std::endl;
 
     CandidateCycleBuilder<Graph, WeightMap> candidate_cycle_builder(g, weight_map);
 
@@ -118,8 +118,8 @@ void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
         total_card += std::get<0>(cc).size();
     }
 
-    std::cout << name << " total cycles weight: " << total_weight << std::endl;
-    std::cout << name << " total cycles cardinality: " << total_card << std::endl;
+    std::cout << name << std::fixed << " cycles weight: " << total_weight << std::endl;
+    std::cout << name << std::fixed << " cycles edge count: " << total_card << std::endl;
 }
 
 template <class Graph, class WeightMap>
@@ -188,9 +188,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "graph n: " << num_vertices(graph) << std::endl;
-    std::cout << "graph m: " << num_edges(graph) << std::endl;
-    std::cout << "graph n*m: " << num_vertices(graph)*num_edges(graph) << std::endl;
+    std::cout << "Graph has " << num_vertices(graph) << " vertices" << std::endl;
+    std::cout << "Graph has " << num_edges(graph) << " edges" << std::endl;
+    std::cout << "Graph n*m: " << num_vertices(graph)*num_edges(graph) << std::endl;
     std::cout << std::flush;
 
     print_all_tree_stats(graph, get(boost::edge_weight, graph));

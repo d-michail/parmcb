@@ -125,6 +125,7 @@ set(
     "test_fvs.cpp"
     "test_mcb.cpp"
     "test_mcb1.cpp"
+    "test_mcb2.cpp"
     "test_approx_mcb.cpp"
 )
 foreach(testsourcefile ${TEST_SOURCES})

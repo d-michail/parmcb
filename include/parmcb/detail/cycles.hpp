@@ -43,16 +43,16 @@ namespace parmcb {
         struct HortonCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
-                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
                 typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
                 VertexIt vi, viend;
                 for (boost::tie(vi, viend) = boost::vertices(g); vi != viend; ++vi) {
                     auto v = *vi;
-                    trees.emplace_back(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v);
+                    trees.push_back(std::make_shared<parmcb::SPTree<Graph, WeightMap>>(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v));
                 }
                 for (auto &tree : trees) {
-                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles();
                     cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
                 }
             }
@@ -63,7 +63,7 @@ namespace parmcb {
         struct FVSCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
-                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
                 compute(g, weight_map, trees, cycles);
             }
@@ -72,7 +72,7 @@ namespace parmcb {
 
             template<bool is_tbb_enabled = ParallelUsingTBB>
             void compute(const Graph &g, const WeightMap &weight_map,
-                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles,
                     typename std::enable_if<!is_tbb_enabled>::type* = 0) {
                 typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -80,17 +80,17 @@ namespace parmcb {
                 std::vector<Vertex> feedback_vertex_set;
                 parmcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
                 for (auto v : feedback_vertex_set) {
-                    trees.emplace_back(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v);
+                    trees.push_back(std::make_shared<parmcb::SPTree<Graph, WeightMap>>(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v));
                 }
                 for (auto &tree : trees) {
-                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles();
                     cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
                 }
             }
 
             template<bool is_tbb_enabled = ParallelUsingTBB>
             void compute(const Graph &g, const WeightMap &weight_map,
-                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles,
                     typename std::enable_if<is_tbb_enabled>::type* = 0) {
                 typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -99,23 +99,19 @@ namespace parmcb {
                 parmcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
 
                 // preallocate an array for parallel access
-                std::vector<std::unique_ptr<parmcb::SPTree<Graph, WeightMap>>> ptr_trees(feedback_vertex_set.size());
+                trees.resize(feedback_vertex_set.size());
 
                 // create shortest path trees in parallel
                 tbb::parallel_for(tbb::blocked_range<std::size_t>(0, feedback_vertex_set.size()), [&](const tbb::blocked_range<std::size_t> &r) {
                     for (std::size_t i = r.begin(); i != r.end(); ++i) {
-                        ptr_trees[i] = std::make_unique<parmcb::SPTree<Graph, WeightMap>>(i, g, boost::get(boost::vertex_index, g), weight_map, feedback_vertex_set[i]);
+                        trees[i] = std::make_shared<parmcb::SPTree<Graph, WeightMap>>(i, g, boost::get(boost::vertex_index, g), weight_map, feedback_vertex_set[i]);
                     }
                 });
 
-                // TODO: copy and construct more efficiently
-
-                for (std::size_t i = 0; i < feedback_vertex_set.size(); ++i) {
-                    trees.push_back(*(ptr_trees[i]));
-                }
+                // TODO: consider doing this also in parallel
 
                 for (auto &tree : trees) {
-                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles();
                     cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
                 }
             }
@@ -126,7 +122,7 @@ namespace parmcb {
         struct ISOCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
-                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
                 typedef typename boost::property_map<Graph, boost::vertex_index_t>::type VertexIndexMapType;
                 typedef typename boost::graph_traits<Graph>::vertex_iterator VertexIt;
@@ -144,7 +140,7 @@ namespace parmcb {
                 for (boost::tie(ui, uiend) = boost::vertices(g); ui != uiend; ++ui) {
                     auto u = *ui;
                     auto uindex = index_map[u];
-                    trees.emplace_back(next_tree, g, boost::get(boost::vertex_index, g), weight_map, u);
+                    trees.push_back(std::make_shared<parmcb::SPTree<Graph, WeightMap>>(next_tree, g, boost::get(boost::vertex_index, g), weight_map, u));
                     trees_index_map[uindex] = next_tree;
                     next_tree++;
                 }
@@ -154,7 +150,7 @@ namespace parmcb {
                  */
                 std::vector<CandidateCycle<Graph, WeightMap>> allcycles;
                 for (const auto &tree : trees) {
-                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles();
                     allcycles.insert(allcycles.end(), tree_cycles.begin(), tree_cycles.end());
                 }
 
@@ -179,7 +175,7 @@ namespace parmcb {
                 std::map<std::pair<std::size_t, Edge>, vertex_descriptor> cycle_to_vertex;
                 for (const auto &cc : allcycles) {
                     // first check that this is indeed a circuit
-                    parmcb::SPTree<Graph, WeightMap> &tree_x = trees[cc.tree()];
+                    parmcb::SPTree<Graph, WeightMap> &tree_x = *(trees[cc.tree()]);
                     auto u = boost::source(cc.edge(), g);
                     auto v = boost::target(cc.edge(), g);
                     auto first_x_u = tree_x.first(u);
@@ -204,7 +200,7 @@ namespace parmcb {
                     auto tree = boost::get(tree_map, *alli);
                     auto e = boost::get(edge_map, *alli);
 
-                    parmcb::SPTree<Graph, WeightMap> &tree_x = trees[tree];
+                    parmcb::SPTree<Graph, WeightMap> &tree_x = *(trees[tree]);
                     auto x = tree_x.source();
                     auto u = boost::source(e, g);
                     auto v = boost::target(e, g);
@@ -222,14 +218,14 @@ namespace parmcb {
                                 cycles_g);
                     } else {
                         auto xprime = tree_x.first(u);
-                        parmcb::SPTree<Graph, WeightMap> &tree_xprime = trees[trees_index_map[index_map[xprime]]];
+                        parmcb::SPTree<Graph, WeightMap> &tree_xprime = *(trees[trees_index_map[index_map[xprime]]]);
                         auto first_xprime_v = tree_xprime.first(v);
 
                         if (x == first_xprime_v) {
                             boost::add_edge(*alli,
                                     cycle_to_vertex[std::make_pair(trees_index_map[index_map[xprime]], e)], cycles_g);
                         } else {
-                            parmcb::SPTree<Graph, WeightMap> &tree_v = trees[trees_index_map[index_map[v]]];
+                            parmcb::SPTree<Graph, WeightMap> &tree_v = *(trees[trees_index_map[index_map[v]]]);
                             auto first_v_xprime = tree_v.first(xprime);
                             if (u == first_v_xprime) {
                                 boost::add_edge(*alli,
@@ -266,7 +262,7 @@ namespace parmcb {
                     if (!is_bad_component[component] && !is_in_output[component]) {
                         auto tree = boost::get(tree_map, v);
                         auto e = boost::get(edge_map, v);
-                        parmcb::SPTree<Graph, WeightMap> &tree_v = trees[tree];
+                        parmcb::SPTree<Graph, WeightMap> &tree_v = *(trees[tree]);
 
                         std::shared_ptr<SPNode<Graph, WeightMap>> spnode_v = tree_v.node(boost::source(e, g));
                         if (spnode_v == nullptr) {

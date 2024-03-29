@@ -501,17 +501,17 @@ namespace parmcb {
     template<class Graph, class WeightMap>
     class CandidateCycleToSerializableConverter {
     public:
-        CandidateCycleToSerializableConverter(const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+        CandidateCycleToSerializableConverter(const std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                 const ForestIndex<Graph> &forest_index) :
                 trees(trees), forest_index(forest_index) {
         }
 
         SerializableCandidateCycle<Graph> operator()(const CandidateCycle<Graph, WeightMap> &cycle) const {
-            return SerializableCandidateCycle<Graph>(trees.at(cycle.tree()).source(), forest_index(cycle.edge()));
+            return SerializableCandidateCycle<Graph>((*trees.at(cycle.tree())).source(), forest_index(cycle.edge()));
         }
 
     private:
-        const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees;
+        const std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees;
         const ForestIndex<Graph> &forest_index;
     };
 
@@ -526,12 +526,12 @@ namespace parmcb {
                 g(g), weight_map(weight_map) {
         }
 
-        std::tuple<std::set<Edge>, WeightType, bool> operator()(const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+        std::tuple<std::set<Edge>, WeightType, bool> operator()(const std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                 const CandidateCycle<Graph, WeightMap> &c, const std::set<Edge> &signed_edges, bool use_weight_limit,
                 WeightType weight_limit) const {
 
-            std::shared_ptr<SPNode<Graph, WeightMap>> v = trees[c.tree()].node(boost::source(c.edge(), g));
-            std::shared_ptr<SPNode<Graph, WeightMap>> u = trees[c.tree()].node(boost::target(c.edge(), g));
+            std::shared_ptr<SPNode<Graph, WeightMap>> v = (*trees[c.tree()]).node(boost::source(c.edge(), g));
+            std::shared_ptr<SPNode<Graph, WeightMap>> u = (*trees[c.tree()]).node(boost::target(c.edge(), g));
 
             Edge e = c.edge();
             if (v->parity() ^ u->parity() ^ (signed_edges.find(e) != signed_edges.end())) {
@@ -547,7 +547,7 @@ namespace parmcb {
 
                 // first part
                 Vertex w = boost::source(c.edge(), g);
-                std::shared_ptr<SPNode<Graph, WeightMap>> ws = trees[c.tree()].node(w);
+                std::shared_ptr<SPNode<Graph, WeightMap>> ws = (*trees[c.tree()]).node(w);
                 while (ws->has_pred()) {
                     Edge a = ws->pred();
                     if (result.insert(a).second == false) {
@@ -560,7 +560,7 @@ namespace parmcb {
                         break;
                     }
                     w = boost::opposite(a, w, g);
-                    ws = trees[c.tree()].node(w);
+                    ws = (*trees[c.tree()]).node(w);
                 }
 
                 if (!valid) {
@@ -569,7 +569,7 @@ namespace parmcb {
 
                 // second part
                 w = boost::target(c.edge(), g);
-                ws = trees[c.tree()].node(w);
+                ws = (*trees[c.tree()]).node(w);
                 while (ws->has_pred()) {
                     Edge a = ws->pred();
                     if (result.insert(a).second == false) {
@@ -582,7 +582,7 @@ namespace parmcb {
                         break;
                     }
                     w = boost::opposite(a, w, g);
-                    ws = trees[c.tree()].node(w);
+                    ws = (*trees[c.tree()]).node(w);
                 }
 
                 if (!valid) {
@@ -607,7 +607,7 @@ namespace parmcb {
         typedef typename boost::property_traits<WeightMap>::value_type WeightType;
 
         ShortestOddCycleLookup(const Graph &g, const WeightMap &weight_map,
-                std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
                 std::vector<parmcb::CandidateCycle<Graph, WeightMap>> &cycles, bool sorted_cycles) :
                 g(g), weight_map(weight_map), candidate_cycle_builder(g, weight_map), trees(trees), cycles(cycles), sorted_cycles(
                         sorted_cycles) {
@@ -624,7 +624,7 @@ namespace parmcb {
                 typename std::enable_if<!is_tbb_enabled>::type* = 0) {
 
             for (std::size_t i = 0; i < trees.size(); i++) {
-                trees[i].update_parities(edges);
+                (*trees[i]).update_parities(edges);
             }
 
             std::tuple<std::set<Edge>, WeightType, bool> min;
@@ -657,7 +657,7 @@ namespace parmcb {
             tbb::parallel_for(tbb::blocked_range<std::size_t>(0, trees.size()),
                     [&](const tbb::blocked_range<std::size_t> &r) {
                         for (std::size_t i = r.begin(); i != r.end(); ++i) {
-                            trees[i].update_parities(edges);
+                            (*trees[i]).update_parities(edges);
                         }
                     });
 
@@ -699,7 +699,7 @@ namespace parmcb {
         const Graph &g;
         const WeightMap &weight_map;
         const CandidateCycleBuilder<Graph, WeightMap> candidate_cycle_builder;
-        std::vector<parmcb::SPTree<Graph, WeightMap>> &trees;
+        std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees;
         std::vector<parmcb::CandidateCycle<Graph, WeightMap>> &cycles;
         bool sorted_cycles;
     };

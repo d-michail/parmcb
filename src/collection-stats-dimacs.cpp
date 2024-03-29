@@ -38,11 +38,11 @@ public:
             g(g), weight_map(weight_map) {
     }
 
-    std::tuple<std::set<Edge>, WeightType> operator()(const std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+    std::tuple<std::set<Edge>, WeightType> operator()(const std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> &trees,
             const parmcb::CandidateCycle<Graph, WeightMap> &c) const {
 
-        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> v = trees[c.tree()].node(boost::source(c.edge(), g));
-        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> u = trees[c.tree()].node(boost::target(c.edge(), g));
+        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> v = (*trees[c.tree()]).node(boost::source(c.edge(), g));
+        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> u = (*trees[c.tree()]).node(boost::target(c.edge(), g));
 
         Edge e = c.edge();
         bool valid = true;
@@ -52,7 +52,7 @@ public:
 
         // first part
         Vertex w = boost::source(c.edge(), g);
-        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> ws = trees[c.tree()].node(w);
+        std::shared_ptr<parmcb::SPNode<Graph, WeightMap>> ws = (*trees[c.tree()]).node(w);
         while (ws->has_pred()) {
             Edge a = ws->pred();
             if (result.insert(a).second == false) {
@@ -61,7 +61,7 @@ public:
             }
             cycle_weight += boost::get(weight_map, a);
             w = boost::opposite(a, w, g);
-            ws = trees[c.tree()].node(w);
+            ws = (*trees[c.tree()]).node(w);
         }
 
         if (!valid) {
@@ -70,7 +70,7 @@ public:
 
         // second part
         w = boost::target(c.edge(), g);
-        ws = trees[c.tree()].node(w);
+        ws = (*trees[c.tree()]).node(w);
         while (ws->has_pred()) {
             Edge a = ws->pred();
             if (result.insert(a).second == false) {
@@ -79,7 +79,7 @@ public:
             }
             cycle_weight += boost::get(weight_map, a);
             w = boost::opposite(a, w, g);
-            ws = trees[c.tree()].node(w);
+            ws = (*trees[c.tree()]).node(w);
         }
 
         if (!valid) {
@@ -98,7 +98,7 @@ private:
 
 template<class Graph, class WeightMap, class CyclesBuilder>
 void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
-    std::vector<parmcb::SPTree<Graph, WeightMap>> trees;
+    std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> trees;
     std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
     CyclesBuilder cycles_builder;
     cycles_builder(g, weight_map, trees, cycles);

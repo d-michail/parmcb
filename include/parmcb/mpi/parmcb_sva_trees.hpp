@@ -71,7 +71,7 @@ namespace parmcb {
             /*
              * Compute all vertex-edge candidate pairs
              */
-            std::vector<parmcb::SPTree<Graph, WeightMap>> trees;
+            std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> trees;
             std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
             CyclesBuilder cycles_builder;
             cycles_builder(g, weight_map, trees, cycles);
@@ -126,12 +126,12 @@ namespace parmcb {
         /*
          * Build trees for local candidate cycles
          */
-        std::vector<parmcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> trees;
         std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
         for (auto const &p : perVertexCandidates) {
-            SPTree<Graph, WeightMap> tree(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, p.first);
+            auto tree = std::make_shared<SPTree<Graph, WeightMap>>(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, p.first);
             trees.push_back(tree);
-            std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles(p.second.begin(),
+            std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles(p.second.begin(),
                     p.second.end());
             cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
         }

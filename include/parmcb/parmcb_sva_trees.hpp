@@ -62,7 +62,7 @@ namespace parmcb {
          * Initialize all shortest path trees
          */
         trees_timer.resume();
-        std::vector<parmcb::SPTree<Graph, WeightMap>> trees;
+        std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> trees;
         std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
         CyclesBuilder cycles_builder;
         cycles_builder(g, weight_map, trees, cycles);

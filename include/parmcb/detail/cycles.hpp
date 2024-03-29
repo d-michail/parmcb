@@ -101,18 +101,21 @@ namespace parmcb {
                 // preallocate an array for parallel access
                 trees.resize(feedback_vertex_set.size());
 
+                // preallocate array for cycles per tree                
+                std::vector<std::vector<CandidateCycle<Graph, WeightMap>>> trees_cycles;
+                trees_cycles.resize(feedback_vertex_set.size());
+
                 // create shortest path trees in parallel
+                // also compute cycles per tree
                 tbb::parallel_for(tbb::blocked_range<std::size_t>(0, feedback_vertex_set.size()), [&](const tbb::blocked_range<std::size_t> &r) {
                     for (std::size_t i = r.begin(); i != r.end(); ++i) {
                         trees[i] = std::make_shared<parmcb::SPTree<Graph, WeightMap>>(i, g, boost::get(boost::vertex_index, g), weight_map, feedback_vertex_set[i]);
+                        trees_cycles[i] = (*trees[i]).create_candidate_cycles();
                     }
                 });
 
-                // TODO: consider doing this also in parallel
-
-                for (auto &tree : trees) {
-                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = (*tree).create_candidate_cycles();
-                    cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+                for(const auto& tc: trees_cycles) { 
+                    cycles.insert(cycles.end(), tc.begin(), tc.end());
                 }
             }
 

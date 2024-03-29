@@ -117,18 +117,18 @@ int main(int argc, char *argv[]) {
 
     if (vm["signed"].as<bool>()) {
         if (world.rank() == 0) {
-            std::cout << "Using PAR_MCB_SVA_SIGNED" << std::endl;
+            std::cout << "Using MCB_SVA_SIGNED_TBB_MPI" << std::endl;
         }
-        mcb_weight = parmcb::mcb_sva_signed_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
+        mcb_weight = parmcb::mcb_sva_signed_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles), world);
     } else if (vm["fvstrees"].as<bool>()) {
         if (world.rank() == 0) {
-            std::cout << "Using PAR_MCB_SVA_FVS_TREES" << std::endl;
+            std::cout << "Using MCB_SVA_FVS_TREES_TBB_MPI" << std::endl;
         }
         mcb_weight = parmcb::mcb_sva_fvs_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                 world);
     } else {
         if (world.rank() == 0) {
-            std::cout << "Using PAR_MCB_SVA_ISO_TREES" << std::endl;
+            std::cout << "Using MCB_SVA_ISO_TREES_TBB_MPI" << std::endl;
         }
         mcb_weight = parmcb::mcb_sva_iso_trees_tbb_mpi(graph, get(boost::edge_weight, graph), std::back_inserter(cycles),
                 world);

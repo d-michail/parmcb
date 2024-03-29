@@ -35,7 +35,7 @@ compute the actual cycles.
 - signed graph 
    * `mcb_sva_signed`
    * `mcb_sva_signed_tbb`  
-   * `mcb_sva_signed_mpi`
+   * `mcb_sva_signed_tbb_mpi`
 - cycles collection from a feedback vertex set 
    * `mcb_sva_fvs_trees`
    * `mcb_sva_fvs_trees_tbb`

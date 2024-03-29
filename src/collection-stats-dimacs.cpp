@@ -124,7 +124,7 @@ void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
 
 template <class Graph, class WeightMap>
 void print_all_tree_stats(const Graph& g, WeightMap weight_map) {
-    print_tree_stats<Graph, WeightMap, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap>>("FVS", g, weight_map);
+    print_tree_stats<Graph, WeightMap, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, false>>("FVS", g, weight_map);
     print_tree_stats<Graph, WeightMap, parmcb::detail::ISOCyclesBuilder<Graph, WeightMap>>("ISO", g, weight_map);
     print_tree_stats<Graph, WeightMap, parmcb::detail::HortonCyclesBuilder<Graph, WeightMap>>("HORTON", g, weight_map);
 }

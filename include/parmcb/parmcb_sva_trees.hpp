@@ -134,14 +134,14 @@ namespace parmcb {
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
-        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap>,
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, false>,
                 false>(g, weight_map, out);
     }
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees_tbb(const Graph &g, WeightMap weight_map,
             CycleOutputIterator out) {
-        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap>,
+        return _mcb_sva_trees<Graph, WeightMap, CycleOutputIterator, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, true>,
                 true>(g, weight_map, out);
     }
 

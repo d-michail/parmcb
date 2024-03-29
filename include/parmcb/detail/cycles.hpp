@@ -12,6 +12,11 @@
 #include <parmcb/sptrees.hpp>
 #include <parmcb/detail/fvs.hpp>
 
+#ifdef PARMCB_HAVE_TBB
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
+#endif
+
 #include <boost/graph/connected_components.hpp>
 
 namespace boost {
@@ -54,12 +59,22 @@ namespace parmcb {
 
         };
 
-        template<class Graph, class WeightMap>
+        template<class Graph, class WeightMap, bool ParallelUsingTBB>
         struct FVSCyclesBuilder {
 
             void operator()(const Graph &g, const WeightMap &weight_map,
                     std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
                     std::vector<CandidateCycle<Graph, WeightMap>> &cycles) {
+                compute(g, weight_map, trees, cycles);
+            }
+
+            private: 
+
+            template<bool is_tbb_enabled = ParallelUsingTBB>
+            void compute(const Graph &g, const WeightMap &weight_map,
+                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<CandidateCycle<Graph, WeightMap>> &cycles,
+                    typename std::enable_if<!is_tbb_enabled>::type* = 0) {
                 typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
 
                 std::vector<Vertex> feedback_vertex_set;
@@ -67,6 +82,38 @@ namespace parmcb {
                 for (auto v : feedback_vertex_set) {
                     trees.emplace_back(trees.size(), g, boost::get(boost::vertex_index, g), weight_map, v);
                 }
+                for (auto &tree : trees) {
+                    std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
+                    cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());
+                }
+            }
+
+            template<bool is_tbb_enabled = ParallelUsingTBB>
+            void compute(const Graph &g, const WeightMap &weight_map,
+                    std::vector<parmcb::SPTree<Graph, WeightMap>> &trees,
+                    std::vector<CandidateCycle<Graph, WeightMap>> &cycles,
+                    typename std::enable_if<is_tbb_enabled>::type* = 0) {
+                typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
+
+                std::vector<Vertex> feedback_vertex_set;
+                parmcb::greedy_fvs(g, std::back_inserter(feedback_vertex_set));
+
+                // preallocate an array for parallel access
+                std::vector<std::unique_ptr<parmcb::SPTree<Graph, WeightMap>>> ptr_trees(feedback_vertex_set.size());
+
+                // create shortest path trees in parallel
+                tbb::parallel_for(tbb::blocked_range<std::size_t>(0, feedback_vertex_set.size()), [&](const tbb::blocked_range<std::size_t> &r) {
+                    for (std::size_t i = r.begin(); i != r.end(); ++i) {
+                        ptr_trees[i] = std::make_unique<parmcb::SPTree<Graph, WeightMap>>(i, g, boost::get(boost::vertex_index, g), weight_map, feedback_vertex_set[i]);
+                    }
+                });
+
+                // TODO: copy and construct more efficiently
+
+                for (std::size_t i = 0; i < feedback_vertex_set.size(); ++i) {
+                    trees.push_back(*(ptr_trees[i]));
+                }
+
                 for (auto &tree : trees) {
                     std::vector<CandidateCycle<Graph, WeightMap>> tree_cycles = tree.create_candidate_cycles();
                     cycles.insert(cycles.end(), tree_cycles.begin(), tree_cycles.end());

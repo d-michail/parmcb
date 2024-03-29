@@ -125,6 +125,32 @@ namespace parmcb {
             initialize();
         }
 
+        SPTree(const SPTree& other) :
+            _id(other._id),
+            _g(other._g),
+            _weight_map(other._weight_map),
+            _index_map(other._index_map),
+            _source(other._source),
+            _root(other._root),
+            _tree_node_map(other._tree_node_map),
+            _first_in_path(other._first_in_path)
+        {}
+
+        SPTree& operator=(const SPTree& other) {
+            if (this != &other) {
+                _id = other._id;
+                _g = other._g;
+                _weight_map = other._weight_map;
+                _index_map = other._index_map;
+                _source = other._source;
+                _root = other._root;
+                _tree_node_map = other._tree_node_map;
+                _first_in_path = other._first_in_path;
+            }
+            return *this;
+        }        
+
+
         void update_parities(const std::set<Edge> &edges) {
             std::stack<SPSubtree<Graph, WeightMap, bool>> stack;
             stack.emplace(false, _root);

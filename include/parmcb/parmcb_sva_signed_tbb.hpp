@@ -239,14 +239,7 @@ namespace parmcb {
             /*
              * Choose the sparsest support heuristic
              */
-            auto min_support = k;
-            for (auto r = k + 1; r < csd; ++r) {
-                if (support[r].size() < support[min_support].size())
-                    min_support = r;
-            }
-            if (min_support != k) {  // swap
-                std::swap(support[k], support[min_support]);
-            }
+            sva_updater.min_support_heuristic(k);
 
             /*
              * Compute shortest odd cycle

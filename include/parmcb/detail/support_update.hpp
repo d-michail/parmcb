@@ -30,6 +30,22 @@ public:
             _support(support) {
     }
 
+    void min_support_heuristic(std::size_t k) { 
+        size_t csd = _support.size();
+        auto min_support = k;
+        for (auto r = k + 1; r < csd; ++r) {
+            if (_support[r].size() < _support[min_support].size()) {
+                min_support = r;
+            }
+            if (_support[min_support].size() < 5) {
+                break;
+            }
+        }
+        if (min_support != k) {  // swap
+            std::swap(_support[k], _support[min_support]);
+        }
+    }
+
     void update(std::size_t k, const std::set<std::size_t>& cyclek) {
         _update(k, cyclek);
     }

@@ -29,6 +29,7 @@
 #include <parmcb/spvecgf2.hpp>
 #include <parmcb/detail/fvs.hpp>
 #include <parmcb/detail/cycles.hpp>
+#include <parmcb/detail/support_update.hpp>
 #include <parmcb/util.hpp>
 #include <parmcb/mpi/sptrees.hpp>
 
@@ -56,12 +57,15 @@ namespace parmcb {
 #endif
 
         /*
-         * Initialize support vectors
+         * Initialize support vectors and sva updater.
          */
-        std::vector<SpVecGF2<std::size_t>> support;
-        for (std::size_t k = 0; k < csd; k++) {
-            support.emplace_back(k);
-        }
+        tbb::concurrent_vector<SpVecGF2<std::size_t>> support;
+        parmcb::detail::SupportVectorUpdater<tbb::concurrent_vector<SpVecGF2<std::size_t>>, true> sva_updater(support);        
+        tbb::parallel_for(tbb::blocked_range<std::size_t>(0, csd), [&](const tbb::blocked_range<std::size_t> &r) {
+            for (std::size_t i = r.begin(); i != r.end(); ++i) {
+                support.push_back(SpVecGF2<std::size_t> { i });
+            }
+        });
 
         /**
          * Scatter candidate cycles
@@ -161,6 +165,7 @@ namespace parmcb {
 
             // broadcast support vector
             if (world.rank() == 0) {
+                sva_updater.min_support_heuristic(k);
                 boost::mpi::broadcast(world, support[k], 0);
             } else {
                 SpVecGF2<std::size_t> received;
@@ -190,11 +195,7 @@ namespace parmcb {
                 for (std::size_t e : global_min_odd_cycle.edges) {
                     cyclek.insert(e);
                 }
-                for (std::size_t l = k + 1; l < csd; l++) {
-                    if (support[l] * cyclek == 1) {
-                        support[l] += support[k];
-                    }
-                }
+                sva_updater.update(k, cyclek);
 
                 std::list<Edge> cyclek_edgelist;
                 convert_edges(global_min_odd_cycle.edges, std::inserter(cyclek_edgelist, cyclek_edgelist.end()),

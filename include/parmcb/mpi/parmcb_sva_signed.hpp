@@ -29,6 +29,7 @@
 
 #include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>
+#include <parmcb/detail/support_update.hpp>
 #include <parmcb/mpi/sptrees.hpp>
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
@@ -223,9 +224,10 @@ namespace parmcb {
         }
 
         /*
-         * Initialize support vectors
+         * Initialize support vectors and sva updater.
          */
         tbb::concurrent_vector<SpVecGF2<std::size_t>> support;
+        parmcb::detail::SupportVectorUpdater<tbb::concurrent_vector<SpVecGF2<std::size_t>>, true> sva_updater(support);        
         tbb::parallel_for(tbb::blocked_range<std::size_t>(0, csd), [&](const tbb::blocked_range<std::size_t> &r) {
             for (std::size_t i = r.begin(); i != r.end(); ++i) {
                 support.push_back(SpVecGF2<std::size_t> { i });
@@ -245,10 +247,9 @@ namespace parmcb {
             }
 #endif
 
-            // TODO: check if sparsest support heuristic makes sense here
-
             // broadcast support vector
             if (world.rank() == 0) {
+                sva_updater.min_support_heuristic(k);
                 boost::mpi::broadcast(world, support[k], 0);
             } else {
                 SpVecGF2<std::size_t> received;
@@ -267,15 +268,7 @@ namespace parmcb {
                  */
                 std::set<std::size_t> cyclek;
                 convert_edges(std::get<0>(best), std::inserter(cyclek, cyclek.end()), forest_index);
-                tbb::parallel_for(tbb::blocked_range<std::size_t>(k + 1, csd),
-                        [&](const tbb::blocked_range<std::size_t> &r) {
-                            auto e = r.end();
-                            for (std::size_t i = r.begin(); i != e; ++i) {
-                                if (support[i] * cyclek == 1) {
-                                    support[i] += support[k];
-                                }
-                            }
-                        });
+                sva_updater.update(k, cyclek);
 
                 /*
                  * Output cycles

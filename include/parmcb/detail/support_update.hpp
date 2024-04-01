@@ -55,9 +55,6 @@ private:
     template<bool is_tbb_enabled = ParallelUsingTBB>
     void _update(std::size_t k, const std::set<std::size_t>& cyclek,
             typename std::enable_if<!is_tbb_enabled>::type* = 0) {
-#ifdef PARMCB_LOGGING
-        std::cout << "Updating support vectors." << std::endl;
-#endif
         size_t csd = _support.size();
         for (std::size_t l = k + 1; l < csd; l++) {
                 if (_support[l] * cyclek == 1) {
@@ -69,11 +66,6 @@ private:
     template<bool is_tbb_enabled = ParallelUsingTBB>
     void _update(std::size_t k, const std::set<std::size_t>& cyclek,
             typename std::enable_if<is_tbb_enabled>::type* = 0) {
-
-#ifdef PARMCB_LOGGING
-        std::cout << "Updating support vectors with TBB!" << std::endl;
-#endif
-
         size_t csd = _support.size();
         tbb::parallel_for(tbb::blocked_range<std::size_t>(k + 1, csd),
                 [&](const tbb::blocked_range<std::size_t> &r) {

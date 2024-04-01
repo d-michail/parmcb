@@ -28,6 +28,7 @@
 
 #include <parmcb/config.hpp>
 #include <parmcb/detail/signed_dijkstra.hpp>
+#include <parmcb/detail/support_update.hpp>
 #include <parmcb/forestindex.hpp>
 #include <parmcb/spvecgf2.hpp>
 #include <parmcb/util.hpp>
@@ -213,6 +214,11 @@ namespace parmcb {
             }
         });
 
+        /*
+         * Initialize updater of support vectors.
+         */
+        parmcb::detail::SupportVectorUpdater<tbb::concurrent_vector<SpVecGF2<std::size_t>>, true> sva_updater(support);
+
         boost::timer::cpu_timer cycle_timer;
         cycle_timer.stop();
         boost::timer::cpu_timer support_timer;
@@ -255,15 +261,7 @@ namespace parmcb {
             support_timer.resume();
             std::set<std::size_t> cyclek;
             convert_edges(std::get<0>(cycle), std::inserter(cyclek, cyclek.end()), forest_index);
-            tbb::parallel_for(tbb::blocked_range<std::size_t>(k + 1, csd),
-                    [&](const tbb::blocked_range<std::size_t> &r) {
-                        auto e = r.end();
-                        for (std::size_t i = r.begin(); i != e; ++i) {
-                            if (support[i] * cyclek == 1) {
-                                support[i] += support[k];
-                            }
-                        }
-                    });
+            sva_updater.update(k, cyclek);
             support_timer.stop();
 
             /*

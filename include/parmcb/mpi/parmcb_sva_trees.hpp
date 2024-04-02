@@ -36,7 +36,7 @@
 namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator, class CyclesBuilder, bool ParallelUsingTBB>
-    typename boost::property_traits<WeightMap>::value_type _mcb_sva_trees_mpi(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type _mcb_sva_trees_mpi(const Graph &g, const WeightMap &weight_map,
             CycleOutputIterator out, boost::mpi::communicator &world) {
 
         typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -216,7 +216,7 @@ namespace parmcb {
     }
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees_mpi(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees_mpi(const Graph &g, const WeightMap &weight_map,
             CycleOutputIterator out, boost::mpi::communicator &world) {
         return _mcb_sva_trees_mpi<Graph, WeightMap, CycleOutputIterator,
                 parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, false>, false>(g, weight_map, out, world);
@@ -224,13 +224,13 @@ namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_fvs_trees_tbb_mpi(const Graph &g,
-            WeightMap weight_map, CycleOutputIterator out, boost::mpi::communicator &world) {
+            const WeightMap &weight_map, CycleOutputIterator out, boost::mpi::communicator &world) {
         return _mcb_sva_trees_mpi<Graph, WeightMap, CycleOutputIterator,
                 parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, true>, true>(g, weight_map, out, world);
     }
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees_mpi(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees_mpi(const Graph &g, const WeightMap &weight_map,
             CycleOutputIterator out, boost::mpi::communicator &world) {
         return _mcb_sva_trees_mpi<Graph, WeightMap, CycleOutputIterator,
                 parmcb::detail::ISOCyclesBuilder<Graph, WeightMap>, false>(g, weight_map, out, world);
@@ -238,7 +238,7 @@ namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
     typename boost::property_traits<WeightMap>::value_type mcb_sva_iso_trees_tbb_mpi(const Graph &g,
-            WeightMap weight_map, CycleOutputIterator out, boost::mpi::communicator &world) {
+            const WeightMap &weight_map, CycleOutputIterator out, boost::mpi::communicator &world) {
         return _mcb_sva_trees_mpi<Graph, WeightMap, CycleOutputIterator,
                 parmcb::detail::ISOCyclesBuilder<Graph, WeightMap>, true>(g, weight_map, out, world);
     }

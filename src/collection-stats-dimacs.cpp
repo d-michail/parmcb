@@ -97,7 +97,7 @@ private:
 
 
 template<class Graph, class WeightMap, class CyclesBuilder>
-void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
+void print_tree_stats(const char *name, const Graph &g, const WeightMap &weight_map) {
     std::vector<std::shared_ptr<parmcb::SPTree<Graph, WeightMap>>> trees;
     std::vector<parmcb::CandidateCycle<Graph, WeightMap>> cycles;
     CyclesBuilder cycles_builder;
@@ -123,7 +123,7 @@ void print_tree_stats(const char *name, const Graph &g, WeightMap weight_map) {
 }
 
 template <class Graph, class WeightMap>
-void print_all_tree_stats(const Graph& g, WeightMap weight_map) {
+void print_all_tree_stats(const Graph& g, const WeightMap &weight_map) {
     print_tree_stats<Graph, WeightMap, parmcb::detail::FVSCyclesBuilder<Graph, WeightMap, false>>("FVS", g, weight_map);
     print_tree_stats<Graph, WeightMap, parmcb::detail::ISOCyclesBuilder<Graph, WeightMap>>("ISO", g, weight_map);
     print_tree_stats<Graph, WeightMap, parmcb::detail::HortonCyclesBuilder<Graph, WeightMap>>("HORTON", g, weight_map);

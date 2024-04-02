@@ -29,7 +29,7 @@
 namespace parmcb {
 
     template<class Graph, class WeightMap, class CycleOutputIterator>
-    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed(const Graph &g, WeightMap weight_map,
+    typename boost::property_traits<WeightMap>::value_type mcb_sva_signed(const Graph &g, const WeightMap &weight_map,
             CycleOutputIterator out) {
 
         typedef typename boost::graph_traits<Graph>::edge_descriptor Edge;

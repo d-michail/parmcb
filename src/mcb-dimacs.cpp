@@ -131,10 +131,6 @@ int main(int argc, char *argv[]) {
     parmcb::read_dimacs_from_file(fp, graph);
     fclose(fp);
 
-    if (parmcb::has_loops(graph)) {
-        std::cerr << "Graph has loops, aborting.." << std::endl;
-        return EXIT_FAILURE;
-    }
     if (parmcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
         std::cerr << "Graph has negative or zero weight edges, aborting.." << std::endl;
         return EXIT_FAILURE;
@@ -179,6 +175,21 @@ int main(int argc, char *argv[]) {
         } else {
             algo = parmcb::add_multiple_edges_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
         }
+    }
+
+    if (parmcb::has_loops(graph)) {
+        std::cout << "Graph has self loops, enabling support.." << std::endl;
+
+        if (vm["parallel"].as<bool>()) {
+            #ifdef PARMCB_HAVE_TBB
+                algo = parmcb::add_self_loops_support_tbb<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
+            #else
+                std::cerr << "TBB not supported, bailing out." << std::endl;
+                exit(1);
+            #endif
+        } else {
+            algo = parmcb::add_self_loops_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
+        }        
     }
 
     double mcb_weight = algo(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));

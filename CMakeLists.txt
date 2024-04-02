@@ -127,6 +127,7 @@ set(
     "test_mcb1.cpp"
     "test_mcb2.cpp"
     "test_mcb_multiple_edges.cpp"
+    "test_mcb_self_loops.cpp"
     "test_approx_mcb.cpp"
 )
 foreach(testsourcefile ${TEST_SOURCES})

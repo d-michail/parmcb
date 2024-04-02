@@ -28,13 +28,25 @@ namespace parmcb {
      * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
      * with multiple edges. 
      */
-    template<typename Graph, typename WeightMap, typename CycleOutputIterator, bool ParallelUsingTBB>
+    template<typename Graph, typename WeightMap, typename CycleOutputIterator>
     auto add_multiple_edges_support(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
         return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
-            parmcb::detail::MultipleEdgesReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, ParallelUsingTBB> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
+            parmcb::detail::MultipleEdgesReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, false> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
             return wrapped_algo(out);
         };
     }
+
+    /**
+     * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
+     * with multiple edges. This version support parallelization with TBB.
+     */ 
+    template<typename Graph, typename WeightMap, typename CycleOutputIterator>
+    auto add_multiple_edges_support_tbb(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
+        return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
+            parmcb::detail::MultipleEdgesReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, true> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
+            return wrapped_algo(out);
+        };
+    }    
 
 } // parmcb
 

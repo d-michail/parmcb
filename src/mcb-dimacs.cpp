@@ -18,12 +18,65 @@
 
 #include <parmcb/config.hpp>
 #include <parmcb/parmcb.hpp>
+#include <parmcb/wrappers.hpp>
 #include <parmcb/util.hpp>
 
 using namespace boost;
 namespace po = boost::program_options;
 
 #define USAGE "Computes the minimum cycle basis of a weighted undirected graph given in DIMACS format."
+
+
+template<typename Graph, typename WeightMap, typename CycleOutputIterator>
+auto create_algo(const po::variables_map& vm) {
+    return [=](const Graph& graph, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
+
+        double mcb_weight;
+
+        if (vm["signed"].as<bool>()) {
+            if (vm["parallel"].as<bool>()) {
+    #ifdef PARMCB_HAVE_TBB
+                std::cout << "Using MCB_SVA_SIGNED_TBB" << std::endl;
+                mcb_weight = parmcb::mcb_sva_signed_tbb(graph, weight_map, out);
+    #else
+                std::cerr << "TBB not supported, bailing out." << std::endl;
+    #endif
+            } else {
+                std::cout << "Using MCB_SVA_SIGNED" << std::endl;
+                mcb_weight = parmcb::mcb_sva_signed(graph, weight_map, out);
+            }
+        } else if (vm["fvstrees"].as<bool>()) {
+            if (vm["parallel"].as<bool>()) {
+    #ifdef PARMCB_HAVE_TBB
+                std::cout << "Using MCB_SVA_FVS_TREES_TBB" << std::endl;
+                mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, weight_map, out);
+    #else
+                std::cerr << "TBB not supported, bailing out." << std::endl;
+    #endif
+            } else {
+                std::cout << "Using MCB_SVA_FVS_TREES" << std::endl;
+                mcb_weight = parmcb::mcb_sva_fvs_trees(graph, weight_map, out);
+            }
+        } else {
+            if (vm["parallel"].as<bool>()) {
+    #ifdef PARMCB_HAVE_TBB
+                std::cout << "Using MCB_SVA_ISO_TREES_TBB" << std::endl;
+                mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, weight_map, out);
+    #else
+                std::cerr << "TBB not supported, bailing out." << std::endl;
+    #endif
+            } else {
+                std::cout << "Using MCB_SVA_ISO_TREES" << std::endl;
+                mcb_weight = parmcb::mcb_sva_iso_trees(graph, weight_map, out);
+            }
+        }        
+
+        return mcb_weight;
+    };
+}
+
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -82,10 +135,6 @@ int main(int argc, char *argv[]) {
         std::cerr << "Graph has loops, aborting.." << std::endl;
         return EXIT_FAILURE;
     }
-    if (parmcb::has_multiple_edges(graph)) {
-        std::cerr << "Graph has multiple edges, aborting.." << std::endl;
-        return EXIT_FAILURE;
-    }
     if (parmcb::has_non_positive_weights(graph, get(boost::edge_weight, graph))) {
         std::cerr << "Graph has negative or zero weight edges, aborting.." << std::endl;
         return EXIT_FAILURE;
@@ -111,44 +160,28 @@ int main(int argc, char *argv[]) {
     boost::timer::cpu_timer timer;
 
     std::list<std::list<edge_descriptor>> cycles;
-    double mcb_weight;
-    if (vm["signed"].as<bool>()) {
+
+    typedef typename boost::property_traits<decltype(get(edge_weight, graph))>::value_type weight_type;
+    typedef std::function<weight_type(const graph_t&, const decltype(get(edge_weight, graph))&, std::back_insert_iterator<std::list<std::list<edge_descriptor>>>)> algo_type;
+    algo_type algo;
+    algo = create_algo<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(vm);
+
+    if (parmcb::has_multiple_edges(graph)) {
+        std::cout << "Graph has multiple edges, enabling support.." << std::endl;
+
         if (vm["parallel"].as<bool>()) {
-#ifdef PARMCB_HAVE_TBB
-            std::cout << "Using MCB_SVA_SIGNED_TBB" << std::endl;
-            mcb_weight = parmcb::mcb_sva_signed_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-#else
-            std::cerr << "TBB not supported, bailing out." << std::endl;
-#endif
+            #ifdef PARMCB_HAVE_TBB
+                algo = parmcb::add_multiple_edges_support_tbb<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
+            #else
+                std::cerr << "TBB not supported, bailing out." << std::endl;
+                exit(1);
+            #endif
         } else {
-            std::cout << "Using MCB_SVA_SIGNED" << std::endl;
-            mcb_weight = parmcb::mcb_sva_signed(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-        }
-    } else if (vm["fvstrees"].as<bool>()) {
-        if (vm["parallel"].as<bool>()) {
-#ifdef PARMCB_HAVE_TBB
-            std::cout << "Using MCB_SVA_FVS_TREES_TBB" << std::endl;
-            mcb_weight = parmcb::mcb_sva_fvs_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-#else
-            std::cerr << "TBB not supported, bailing out." << std::endl;
-#endif
-        } else {
-            std::cout << "Using MCB_SVA_FVS_TREES" << std::endl;
-            mcb_weight = parmcb::mcb_sva_fvs_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-        }
-    } else {
-        if (vm["parallel"].as<bool>()) {
-#ifdef PARMCB_HAVE_TBB
-            std::cout << "Using MCB_SVA_ISO_TREES_TBB" << std::endl;
-            mcb_weight = parmcb::mcb_sva_iso_trees_tbb(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
-#else
-            std::cerr << "TBB not supported, bailing out." << std::endl;
-#endif
-        } else {
-            std::cout << "Using MCB_SVA_ISO_TREES" << std::endl;
-            mcb_weight = parmcb::mcb_sva_iso_trees(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
+            algo = parmcb::add_multiple_edges_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
         }
     }
+
+    double mcb_weight = algo(graph, get(boost::edge_weight, graph), std::back_inserter(cycles));
 
     timer.stop();
 

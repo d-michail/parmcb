@@ -342,11 +342,7 @@ private:
             Vertex spanner_v = _vertex_g_to_spanner[v];
             Vertex spanner_u = _vertex_g_to_spanner[u];
 
-            if (spanner_v == spanner_u) {
-                throw std::runtime_error("Self loops?");
-            }
-
-            if (!parmcb::is_bfs_reachable(_spanner, spanner_v, spanner_u,
+            if (spanner_v != spanner_u && !parmcb::is_bfs_reachable(_spanner, spanner_v, spanner_u,
                     2 * _k - 1)) {
                 // add edge to spanner
                 Edge spanner_e = std::get<0>(

@@ -76,7 +76,7 @@ TEST_CASE("sequential sva signed with multiple edges"){
     CHECK(num_edges(graph) == 17);
 
     std::list<std::list<Edge>> cycles;
-    auto wrapped_mcb_sva_signed = parmcb::add_multiple_edges_support<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>(parmcb::mcb_sva_signed<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>);    
+    auto wrapped_mcb_sva_signed = parmcb::add_multiple_edges_and_self_loops_support<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>(parmcb::mcb_sva_signed<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>);    
     double mcb_weight = wrapped_mcb_sva_signed(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {
@@ -99,7 +99,7 @@ TEST_CASE("parallel sva signed with multiple edges"){
     CHECK(num_edges(graph) == 17);
 
     std::list<std::list<Edge>> cycles;
-    auto wrapped_mcb_sva_signed = parmcb::add_multiple_edges_support_tbb<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>(parmcb::mcb_sva_signed<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>);    
+    auto wrapped_mcb_sva_signed = parmcb::add_multiple_edges_and_self_loops_support_tbb<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>(parmcb::mcb_sva_signed<Graph, decltype(weight), std::back_insert_iterator<std::list<std::list<Edge>>>>);    
     double mcb_weight = wrapped_mcb_sva_signed(graph, weight, std::back_inserter(cycles));
 
     for (auto it = cycles.begin(); it != cycles.end(); it++) {

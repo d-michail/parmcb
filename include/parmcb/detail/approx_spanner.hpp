@@ -44,7 +44,6 @@ public:
                     spanner_index_map), _edge_spanner_to_g(edge_spanner_to_g), _spanner_weight_map(
                     spanner_weight_map), _non_spanner_edges(non_spanner_edges), _vertex_g_to_spanner(
                     vertex_g_to_spanner) {
-
     }
 
     template<class CycleOutputIterator>
@@ -68,56 +67,61 @@ private:
             auto e = *it;
             Vertex v = boost::source(e, _g);
             Vertex u = boost::target(e, _g);
-            Vertex spanner_v = _vertex_g_to_spanner[v];
-            Vertex spanner_u = _vertex_g_to_spanner[u];
 
-            // compute shortest path on spanner
-            std::vector<WeightType> dist(boost::num_vertices(_spanner),
-                    (std::numeric_limits<WeightType>::max)());
-            boost::function_property_map<
-                    parmcb::detail::VertexIndexFunctor<Graph, WeightType>,
-                    Vertex, WeightType&> dist_map(
-                    parmcb::detail::VertexIndexFunctor<Graph, WeightType>(dist,
-                            _spanner_index_map));
-            std::vector<std::tuple<bool, Edge>> pred(
-                    boost::num_vertices(_spanner),
-                    std::make_tuple(false, Edge()));
-            boost::function_property_map<
-                    parmcb::detail::VertexIndexFunctor<Graph,
-                            std::tuple<bool, Edge>>, Vertex,
-                    std::tuple<bool, Edge>&> pred_map(
-                    parmcb::detail::VertexIndexFunctor<Graph,
-                            std::tuple<bool, Edge> >(pred, _spanner_index_map));
-
-            // run dijkstra
-            parmcb::dijkstra(_spanner, _spanner_weight_map, spanner_v, dist_map,
-                    pred_map);
-
-            // form cycle
             std::list<Edge> cycle_edgelist;
             WeightType weight = WeightType();
-            Vertex spanner_w = spanner_u;
-            while (true) {
-                auto pred_t = boost::get(pred_map, spanner_w);
-                if (!std::get<0>(pred_t)) {
-                    // no predecessor
-                    break;
-                }
-                Edge spanner_ae = std::get<1>(pred_t);
-                Edge ae = _edge_spanner_to_g.at(spanner_ae);
-                cycle_edgelist.push_back(ae);
-                weight += boost::get(_weight_map, ae);
 
-                // go to predecessor
-                auto spanner_other = boost::target(spanner_ae, _spanner);
-                if (spanner_other == spanner_w) {
-                    spanner_other = boost::source(spanner_ae, _spanner);
+            if (v != u) { 
+                Vertex spanner_v = _vertex_g_to_spanner[v];
+                Vertex spanner_u = _vertex_g_to_spanner[u];
+
+                // compute shortest path on spanner
+                std::vector<WeightType> dist(boost::num_vertices(_spanner),
+                        (std::numeric_limits<WeightType>::max)());
+                boost::function_property_map<
+                        parmcb::detail::VertexIndexFunctor<Graph, WeightType>,
+                        Vertex, WeightType&> dist_map(
+                        parmcb::detail::VertexIndexFunctor<Graph, WeightType>(dist,
+                                _spanner_index_map));
+                std::vector<std::tuple<bool, Edge>> pred(
+                        boost::num_vertices(_spanner),
+                        std::make_tuple(false, Edge()));
+                boost::function_property_map<
+                        parmcb::detail::VertexIndexFunctor<Graph,
+                                std::tuple<bool, Edge>>, Vertex,
+                        std::tuple<bool, Edge>&> pred_map(
+                        parmcb::detail::VertexIndexFunctor<Graph,
+                                std::tuple<bool, Edge> >(pred, _spanner_index_map));
+
+                // run dijkstra
+                parmcb::dijkstra(_spanner, _spanner_weight_map, spanner_v, dist_map,
+                        pred_map);
+
+                // form cycle
+                Vertex spanner_w = spanner_u;
+                while (true) {
+                    auto pred_t = boost::get(pred_map, spanner_w);
+                    if (!std::get<0>(pred_t)) {
+                        // no predecessor
+                        break;
+                    }
+                    Edge spanner_ae = std::get<1>(pred_t);
+                    Edge ae = _edge_spanner_to_g.at(spanner_ae);
+                    cycle_edgelist.push_back(ae);
+                    weight += boost::get(_weight_map, ae);
+
+                    // go to predecessor
+                    auto spanner_other = boost::target(spanner_ae, _spanner);
+                    if (spanner_other == spanner_w) {
+                        spanner_other = boost::source(spanner_ae, _spanner);
+                    }
+                    if (spanner_other == spanner_w) {
+                        throw new std::runtime_error("Self loops?");
+                    }
+                    spanner_w = spanner_other;
                 }
-                if (spanner_other == spanner_w) {
-                    throw new std::runtime_error("Self loops?");
-                }
-                spanner_w = spanner_other;
             }
+
             cycle_edgelist.push_back(e);
             weight += boost::get(_weight_map, e);
 
@@ -148,60 +152,65 @@ private:
 
                         Vertex v = boost::source(e, _g);
                         Vertex u = boost::target(e, _g);
-                        Vertex spanner_v = _vertex_g_to_spanner[v];
-                        Vertex spanner_u = _vertex_g_to_spanner[u];
 
-                        // compute shortest path on spanner
-                        std::vector<WeightType> dist(
-                                boost::num_vertices(_spanner),
-                                (std::numeric_limits<WeightType>::max)());
-                        boost::function_property_map<
-                                parmcb::detail::VertexIndexFunctor<Graph,
-                                        WeightType>, Vertex, WeightType&> dist_map(
-                                parmcb::detail::VertexIndexFunctor<Graph,
-                                        WeightType>(dist, _spanner_index_map));
-                        std::vector<std::tuple<bool, Edge>> pred(
-                                boost::num_vertices(_spanner),
-                                std::make_tuple(false, Edge()));
-                        boost::function_property_map<
-                                parmcb::detail::VertexIndexFunctor<Graph,
-                                        std::tuple<bool, Edge>>, Vertex,
-                                std::tuple<bool, Edge>&> pred_map(
-                                parmcb::detail::VertexIndexFunctor<Graph,
-                                        std::tuple<bool, Edge> >(pred,
-                                        _spanner_index_map));
-
-                        // run dijkstra
-                        parmcb::dijkstra(_spanner, _spanner_weight_map,
-                                spanner_v, dist_map, pred_map);
-
-                        // form cycle
                         std::list<Edge> cycle_edgelist;
                         WeightType weight = WeightType();
-                        Vertex spanner_w = spanner_u;
-                        while (true) {
-                            auto pred_t = boost::get(pred_map, spanner_w);
-                            if (!std::get<0>(pred_t)) {
-                                // no predecessor
-                                break;
-                            }
-                            Edge spanner_ae = std::get<1>(pred_t);
-                            Edge ae = _edge_spanner_to_g.at(spanner_ae);
-                            cycle_edgelist.push_back(ae);
-                            weight += boost::get(_weight_map, ae);
 
-                            // go to predecessor
-                            auto spanner_other = boost::target(spanner_ae,
-                                    _spanner);
-                            if (spanner_other == spanner_w) {
-                                spanner_other = boost::source(spanner_ae,
+                        if (v != u) { 
+                            Vertex spanner_v = _vertex_g_to_spanner[v];
+                            Vertex spanner_u = _vertex_g_to_spanner[u];
+
+                            // compute shortest path on spanner
+                            std::vector<WeightType> dist(
+                                    boost::num_vertices(_spanner),
+                                    (std::numeric_limits<WeightType>::max)());
+                            boost::function_property_map<
+                                    parmcb::detail::VertexIndexFunctor<Graph,
+                                            WeightType>, Vertex, WeightType&> dist_map(
+                                    parmcb::detail::VertexIndexFunctor<Graph,
+                                            WeightType>(dist, _spanner_index_map));
+                            std::vector<std::tuple<bool, Edge>> pred(
+                                    boost::num_vertices(_spanner),
+                                    std::make_tuple(false, Edge()));
+                            boost::function_property_map<
+                                    parmcb::detail::VertexIndexFunctor<Graph,
+                                            std::tuple<bool, Edge>>, Vertex,
+                                    std::tuple<bool, Edge>&> pred_map(
+                                    parmcb::detail::VertexIndexFunctor<Graph,
+                                            std::tuple<bool, Edge> >(pred,
+                                            _spanner_index_map));
+
+                            // run dijkstra
+                            parmcb::dijkstra(_spanner, _spanner_weight_map,
+                                    spanner_v, dist_map, pred_map);
+
+                            // form cycle
+                            Vertex spanner_w = spanner_u;
+                            while (true) {
+                                auto pred_t = boost::get(pred_map, spanner_w);
+                                if (!std::get<0>(pred_t)) {
+                                    // no predecessor
+                                    break;
+                                }
+                                Edge spanner_ae = std::get<1>(pred_t);
+                                Edge ae = _edge_spanner_to_g.at(spanner_ae);
+                                cycle_edgelist.push_back(ae);
+                                weight += boost::get(_weight_map, ae);
+
+                                // go to predecessor
+                                auto spanner_other = boost::target(spanner_ae,
                                         _spanner);
+                                if (spanner_other == spanner_w) {
+                                    spanner_other = boost::source(spanner_ae,
+                                            _spanner);
+                                }
+                                if (spanner_other == spanner_w) {
+                                    throw new std::runtime_error("Self loops?");
+                                }
+                                spanner_w = spanner_other;
                             }
-                            if (spanner_other == spanner_w) {
-                                throw new std::runtime_error("Self loops?");
-                            }
-                            spanner_w = spanner_other;
                         }
+
                         cycle_edgelist.push_back(e);
                         weight += boost::get(_weight_map, e);
 
@@ -238,8 +247,10 @@ private:
 
 };
 
-template<class Graph, class WeightMap, typename ExactAlgorithm,
-        bool ParallelUsingTBB>
+template<typename Graph, typename WeightMap, typename CycleOutputIterator>
+using MCBAlgoType = std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)>;
+
+template<class Graph, class WeightMap, class CycleOutputIterator, bool ParallelUsingTBB>
 class BaseApproxSpannerAlgorithm {
 public:
     typedef typename boost::graph_traits<Graph>::vertex_descriptor Vertex;
@@ -252,18 +263,17 @@ public:
     typedef typename boost::property_map<Graph, boost::edge_weight_t>::type EdgeWeightMapType;
 
     BaseApproxSpannerAlgorithm(const Graph &g, const WeightMap &weight_map, const VertexIndexMapType& index_map,
-            std::size_t k) :
+            std::size_t k, MCBAlgoType<Graph, WeightMap, CycleOutputIterator> algo) :
             _g(g), _weight_map(weight_map), _k(k), _index_map(index_map), _vertex_g_to_spanner_vec(
                     boost::num_vertices(g),
                     (std::numeric_limits<std::size_t>::max)()), _vertex_g_to_spanner(
                     parmcb::detail::VertexIndexFunctor<Graph, Vertex>(
                             _vertex_g_to_spanner_vec, _index_map)), _spanner(), _spanner_index_map(
                     boost::get(boost::vertex_index, _spanner)), _weight(
-                    WeightType()) {
+                    WeightType()), _algo(algo) {
         construct_spanner();
     }
 
-    template<class CycleOutputIterator>
     WeightType run(CycleOutputIterator out) {
         // preconditions check
         if (_k < 1) {
@@ -277,8 +287,7 @@ public:
         // compute spanner MCB with exact algorithm
         EdgeWeightMapType spanner_weight_map = get(boost::edge_weight,
                 _spanner);
-        ExactAlgorithm exact_mcb_algo;
-        _weight += exact_mcb_algo(_spanner, spanner_weight_map, out);
+        _weight += _algo(_spanner, spanner_weight_map, out);
 
         // compute remaining cycles
         parmcb::detail::NonSpannerEdgesCycleBuilder<Graph, WeightMap,
@@ -308,6 +317,9 @@ private:
 
     // mcb
     WeightType _weight;
+
+    // wrapped algo
+    MCBAlgoType<Graph, WeightMap, CycleOutputIterator> _algo;    
 
     void construct_spanner() {
         if (boost::num_vertices(_spanner) > 0) {

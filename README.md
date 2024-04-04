@@ -47,6 +47,10 @@ compute the actual cycles.
    * `mcb_sva_iso_trees_mpi`
    * `mcb_sva_iso_trees_tbb_mpi`
 
+All these different implementations support weighted undirected graphs which (a) do not contain self-loops, 
+(b) do not contain multiple edges, and (c) all edge weights are positive. If your graph has self-loops, 
+multiple edges or zero weight edges, you need to handle those in a preprocessing step.
+
 ### Undirected Graphs (approximation algorithms)
 
 A (2k-1)-approximate algorithm for any integer k >= 1. 
@@ -59,12 +63,11 @@ A (2k-1)-approximate algorithm for any integer k >= 1.
   * `approx_mcb_sva_iso_trees`
 
 The signed graph variation `approx_mcb_sva_signed`  has time complexity equal to  
-O( m n^{1+1/k} + min(m^3 + m n^2 \log n, n^{3+3/k}) ).
+O( m n^{1+1/k} + min(m^3 + m n^2 \log n, n^{3+3/k}) ). The approximation algorithms support weighted 
+undirected graphs with positive edge weights. Multiple edges and self-loops are handled correctly by the 
+algorithm. If you have zero length edges you need to handle them in a preprocessing step.
 
 
-All these different implementations support weighted undirected graphs which (a) do not contain self-loops, 
-(b) do not contain multiple edges, and (c) all edge weights are positive. If your graph has self-loops, 
-multiple edges or zero weight edges, you need to handle those in a preprocessing step.
 
 Two demos programs are included which read a graph in DIMACS format and compute a minimum cycle basis.
 

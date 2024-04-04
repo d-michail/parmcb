@@ -162,33 +162,26 @@ int main(int argc, char *argv[]) {
     algo_type algo;
     algo = create_algo<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(vm);
 
+    bool enable_wrapper = false;
     if (parmcb::has_multiple_edges(graph)) {
         std::cout << "Graph has multiple edges, enabling support.." << std::endl;
-
-        if (vm["parallel"].as<bool>()) {
-            #ifdef PARMCB_HAVE_TBB
-                algo = parmcb::add_multiple_edges_support_tbb<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
-            #else
-                std::cerr << "TBB not supported, bailing out." << std::endl;
-                exit(1);
-            #endif
-        } else {
-            algo = parmcb::add_multiple_edges_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
-        }
+        enable_wrapper = true;
     }
-
     if (parmcb::has_loops(graph)) {
         std::cout << "Graph has self loops, enabling support.." << std::endl;
+        enable_wrapper = true;
+    }    
 
+    if (enable_wrapper) { 
         if (vm["parallel"].as<bool>()) {
             #ifdef PARMCB_HAVE_TBB
-                algo = parmcb::add_self_loops_support_tbb<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
+                algo = parmcb::add_multiple_edges_and_self_loops_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
             #else
                 std::cerr << "TBB not supported, bailing out." << std::endl;
                 exit(1);
             #endif
         } else {
-            algo = parmcb::add_self_loops_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
+            algo = parmcb::add_multiple_edges_and_self_loops_support<graph_t, decltype(get(edge_weight, graph)), std::back_insert_iterator<std::list<std::list<edge_descriptor>>>>(algo);
         }        
     }
 

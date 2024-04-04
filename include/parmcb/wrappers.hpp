@@ -20,56 +20,33 @@
 #include <functional>
 
 #include <parmcb/config.hpp>
-#include <parmcb/detail/multiple_edges.hpp>
-#include <parmcb/detail/self_loops.hpp>
+#include <parmcb/detail/approx_spanner.hpp>
 
 namespace parmcb {
 
     /**
      * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
-     * with multiple edges. 
+     * with multiple edges and self loops. 
      */
     template<typename Graph, typename WeightMap, typename CycleOutputIterator>
-    auto add_multiple_edges_support(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
+    auto add_multiple_edges_and_self_loops_support(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
         return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
-            parmcb::detail::MultipleEdgesReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, false> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
-            return wrapped_algo(out);
+            std::size_t k = 1;
+            parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, CycleOutputIterator, false> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), k, algo);
+            return wrapped_algo.run(out);
         };
     }
 
     /**
      * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
-     * with multiple edges. This version support parallelization with TBB.
+     * with multiple edges and self loops. This version support parallelization with TBB.
      */ 
     template<typename Graph, typename WeightMap, typename CycleOutputIterator>
-    auto add_multiple_edges_support_tbb(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
+    auto add_multiple_edges_and_self_loops_support_tbb(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
         return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
-            parmcb::detail::MultipleEdgesReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, true> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
-            return wrapped_algo(out);
-        };
-    }    
-
-    /**
-     * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
-     * with self loops. 
-     */
-    template<typename Graph, typename WeightMap, typename CycleOutputIterator>
-    auto add_self_loops_support(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
-        return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
-            parmcb::detail::SelfLoopsReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, false> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
-            return wrapped_algo(out);
-        };
-    }
-
-    /**
-     * Wrap an MCB algorithm with proper preprocessing and postprocessing in order to support graphs 
-     * with self loops. 
-     */
-    template<typename Graph, typename WeightMap, typename CycleOutputIterator>
-    auto add_self_loops_support_tbb(std::function<typename boost::property_traits<WeightMap>::value_type(const Graph&, const WeightMap&, CycleOutputIterator)> algo) {
-        return [=](const Graph& g, const WeightMap& weight_map, CycleOutputIterator out) -> typename boost::property_traits<WeightMap>::value_type {
-            parmcb::detail::SelfLoopsReductionAlgorithm<Graph, WeightMap, CycleOutputIterator, true> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), algo);
-            return wrapped_algo(out);
+            std::size_t k = 1;
+            parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, CycleOutputIterator, true> wrapped_algo(g, weight_map, boost::get(boost::vertex_index, g), k, algo);
+            return wrapped_algo.run(out);
         };
     }    
 

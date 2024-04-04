@@ -11,24 +11,12 @@
 
 namespace parmcb {
 
-namespace detail {
-
-template<class Graph, class WeightMap, class CycleOutputIterator>
-struct mcb_sva_signed_tbb {
-    typename boost::property_traits<WeightMap>::value_type operator()(
-            const Graph &g, const WeightMap &weight, CycleOutputIterator out) {
-        return parmcb::mcb_sva_signed_tbb(g, weight, out);
-    }
-};
-} // detail
-
 template<class Graph, class WeightMap, class CycleOutputIterator>
 typename boost::property_traits<WeightMap>::value_type approx_mcb_sva_signed_tbb(
         const Graph &g, const WeightMap &weight, std::size_t k,
         CycleOutputIterator out) {
-    typedef typename parmcb::detail::mcb_sva_signed_tbb<Graph,WeightMap,CycleOutputIterator> ExactAlgo;
-
-    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, ExactAlgo, true> algo(g, weight, boost::get(boost::vertex_index, g), k);
+    auto exact_algo = parmcb::mcb_sva_signed_tbb<Graph, WeightMap, CycleOutputIterator>;
+    parmcb::detail::BaseApproxSpannerAlgorithm<Graph, WeightMap, CycleOutputIterator, true> algo(g, weight, boost::get(boost::vertex_index, g), k, exact_algo);
     return algo.run(out);
 }
 

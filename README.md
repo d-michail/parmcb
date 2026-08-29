@@ -20,6 +20,21 @@ If you use this package please cite the following paper:
    <i class="far fa-file-pdf"></i> [pdf](https://d-michail.github.io/assets/papers/implMCBjournal.pdf),
    <i class="fas fa-link"></i> [web](https://portal.acm.org/citation.cfm?id=1187436.1216582)
 
+```
+@article{mehlhorn2006implementing,
+      title={Implementing Minimum Cycle Basis Algorithms},
+      author={Mehlhorn, Kurt and Michail, Dimitrios},
+      journal={ACM Journal of Experimental Algorithmics},
+      volume={11},
+      number={2},
+      pages={1--14},
+      year={2006},
+      publisher={ACM},
+      doi={10.1145/1187436.1216582},
+      url={https://doi.org/10.1145/1187436.1216582},
+}
+```
+
 Citing software is just as important as citing any other important sources in your research.
 If you’re not sure whether or not to cite something, [Shouldacite](http://bit.ly/shouldacite) can help
 you decide if you should.

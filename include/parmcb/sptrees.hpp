@@ -280,7 +280,7 @@ namespace parmcb {
         }
 
     private:
-        const std::size_t _id;
+        std::size_t _id;
         const Graph &_g;
         const WeightMap &_weight_map;
         const VertexIndexMapType &_index_map;
